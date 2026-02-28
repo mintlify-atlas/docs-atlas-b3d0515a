@@ -1,0 +1,147 @@
+{
+  "projectType": "saas",
+  "projectName": "Firefly III",
+  "projectDescription": "A free and open source personal finance manager",
+  "theme": "almond",
+  "primaryColor": "#4682B4",
+  "lightColor": "#5B9BD5",
+  "darkColor": "#2E5C8A",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Installation",
+            "pages": [
+              "installation/docker",
+              "installation/self-hosted",
+              "installation/kubernetes",
+              "installation/configuration"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/accounts",
+              "features/transactions",
+              "features/budgets",
+              "features/bills",
+              "features/recurring-transactions",
+              "features/piggy-banks",
+              "features/categories-tags",
+              "features/rules",
+              "features/reports"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/currencies",
+              "advanced/webhooks",
+              "advanced/automation",
+              "advanced/data-import",
+              "advanced/data-export"
+            ]
+          },
+          {
+            "group": "Administration",
+            "pages": [
+              "admin/user-management",
+              "admin/security",
+              "admin/backup-restore",
+              "admin/troubleshooting"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api/overview",
+              "api/authentication"
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "api/accounts",
+              "api/transactions",
+              "api/budgets",
+              "api/bills",
+              "api/categories",
+              "api/tags",
+              "api/piggy-banks",
+              "api/recurring-transactions",
+              "api/rules",
+              "api/currencies"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "api/insights",
+              "api/charts",
+              "api/search",
+              "api/webhooks",
+              "api/data-operations"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Double-entry bookkeeping system",
+    "Budget management and tracking",
+    "Recurring transactions and subscriptions",
+    "Rule-based transaction automation",
+    "Piggy banks for savings goals",
+    "Multi-currency support",
+    "Comprehensive reporting and charts",
+    "REST API with OAuth2",
+    "Self-hosted with complete data privacy",
+    "2-factor authentication",
+    "Import/export capabilities",
+    "Webhook integrations"
+  ],
+  "publicApiSurface": [
+    "GET /api/v1/accounts",
+    "POST /api/v1/accounts",
+    "GET /api/v1/transactions",
+    "POST /api/v1/transactions",
+    "GET /api/v1/budgets",
+    "POST /api/v1/budgets",
+    "GET /api/v1/bills",
+    "POST /api/v1/bills",
+    "GET /api/v1/categories",
+    "POST /api/v1/categories",
+    "GET /api/v1/tags",
+    "POST /api/v1/tags",
+    "GET /api/v1/piggy-banks",
+    "POST /api/v1/piggy-banks",
+    "GET /api/v1/recurring",
+    "POST /api/v1/recurring",
+    "GET /api/v1/rules",
+    "POST /api/v1/rules",
+    "GET /api/v1/currencies",
+    "GET /api/v1/insight/expense/*",
+    "GET /api/v1/insight/income/*",
+    "GET /api/v1/insight/transfer/*",
+    "GET /api/v1/chart/*",
+    "GET /api/v1/search/*",
+    "GET /api/v1/webhooks",
+    "POST /api/v1/webhooks"
+  ]
+}
