@@ -1,0 +1,762 @@
+---
+title: Kubernetes Installation
+description: Deploy Firefly III on Kubernetes with persistent storage and high availability
+---
+
+This guide covers deploying Firefly III on Kubernetes, including configuration for persistent storage, secrets management, and scalability considerations.
+
+## Prerequisites
+
+- Kubernetes cluster 1.24 or higher
+- `kubectl` configured to access your cluster
+- A storage class for persistent volumes
+- (Optional) Ingress controller (nginx, Traefik, etc.)
+- (Optional) cert-manager for SSL certificates
+
+## Quick Start
+
+<Steps>
+  <Step title="Create a namespace">
+    ```bash
+    kubectl create namespace firefly
+    ```
+  </Step>
+
+  <Step title="Deploy the manifests">
+    Apply all the manifests from the following sections, or use Helm (see below).
+  </Step>
+
+  <Step title="Access the application">
+    Use port-forward to test:
+    
+    ```bash
+    kubectl port-forward -n firefly svc/firefly 8080:80
+    ```
+    
+    Then navigate to `http://localhost:8080`.
+  </Step>
+</Steps>
+
+## Kubernetes Manifests
+
+### Namespace
+
+```yaml namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: firefly
+```
+
+### Secrets
+
+Create secrets for sensitive data:
+
+```yaml secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: firefly-secrets
+  namespace: firefly
+type: Opaque
+stringData:
+  APP_KEY: "SomeRandomStringOf32CharsExactly"
+  DB_PASSWORD: "secure_database_password"
+  MYSQL_ROOT_PASSWORD: "secure_root_password"
+  SITE_OWNER: "admin@example.com"
+```
+
+<Warning>
+Generate a secure `APP_KEY`:
+```bash
+head /dev/urandom | LC_ALL=C tr -dc 'A-Za-z0-9' | head -c 32 && echo
+```
+Replace the value in the secret before applying!
+</Warning>
+
+Apply the secret:
+
+```bash
+kubectl apply -f secrets.yaml
+```
+
+### ConfigMap
+
+Store non-sensitive configuration:
+
+```yaml configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: firefly-config
+  namespace: firefly
+data:
+  APP_ENV: "production"
+  APP_DEBUG: "false"
+  APP_URL: "https://firefly.example.com"
+  DB_CONNECTION: "mysql"
+  DB_HOST: "firefly-db"
+  DB_PORT: "3306"
+  DB_DATABASE: "firefly"
+  DB_USERNAME: "firefly"
+  DEFAULT_LANGUAGE: "en_US"
+  DEFAULT_LOCALE: "equal"
+  TZ: "Europe/Amsterdam"
+  TRUSTED_PROXIES: "**"
+  LOG_CHANNEL: "stack"
+  APP_LOG_LEVEL: "notice"
+  AUDIT_LOG_LEVEL: "emergency"
+  CACHE_DRIVER: "file"
+  SESSION_DRIVER: "file"
+```
+
+### PersistentVolumeClaims
+
+Define storage for the database and uploads:
+
+```yaml pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: firefly-db-pvc
+  namespace: firefly
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  # storageClassName: your-storage-class  # Uncomment and specify if needed
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: firefly-upload-pvc
+  namespace: firefly
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  # storageClassName: your-storage-class
+```
+
+### Database Deployment
+
+```yaml database-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: firefly-db
+  namespace: firefly
+  labels:
+    app: firefly-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: firefly-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: firefly-db
+    spec:
+      containers:
+      - name: mariadb
+        image: mariadb:latest
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: firefly-secrets
+              key: MYSQL_ROOT_PASSWORD
+        - name: MYSQL_DATABASE
+          value: firefly
+        - name: MYSQL_USER
+          value: firefly
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: firefly-secrets
+              key: DB_PASSWORD
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: db-storage
+          mountPath: /var/lib/mysql
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: db-storage
+        persistentVolumeClaim:
+          claimName: firefly-db-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: firefly-db
+  namespace: firefly
+spec:
+  selector:
+    app: firefly-db
+  ports:
+  - port: 3306
+    targetPort: 3306
+  clusterIP: None
+```
+
+### Firefly III Deployment
+
+```yaml firefly-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: firefly-app
+  namespace: firefly
+  labels:
+    app: firefly-app
+spec:
+  replicas: 1  # Scale to 2+ for high availability
+  selector:
+    matchLabels:
+      app: firefly-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: firefly-app
+    spec:
+      initContainers:
+      - name: wait-for-db
+        image: busybox:1.35
+        command:
+        - sh
+        - -c
+        - |
+          until nc -z firefly-db 3306; do
+            echo "Waiting for database..."
+            sleep 2
+          done
+      containers:
+      - name: firefly
+        image: fireflyiii/core:latest
+        envFrom:
+        - configMapRef:
+            name: firefly-config
+        env:
+        - name: APP_KEY
+          valueFrom:
+            secretKeyRef:
+              name: firefly-secrets
+              key: APP_KEY
+        - name: SITE_OWNER
+          valueFrom:
+            secretKeyRef:
+              name: firefly-secrets
+              key: SITE_OWNER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: firefly-secrets
+              key: DB_PASSWORD
+        ports:
+        - containerPort: 8080
+          name: http
+        volumeMounts:
+        - name: upload-storage
+          mountPath: /var/www/html/storage/upload
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: upload-storage
+        persistentVolumeClaim:
+          claimName: firefly-upload-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: firefly
+  namespace: firefly
+spec:
+  selector:
+    app: firefly-app
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP
+```
+
+### Ingress (Optional)
+
+Expose Firefly III via an ingress controller:
+
+<Tabs>
+  <Tab title="Nginx Ingress">
+    ```yaml ingress-nginx.yaml
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: firefly-ingress
+      namespace: firefly
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+        nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+        nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    spec:
+      ingressClassName: nginx
+      tls:
+      - hosts:
+        - firefly.example.com
+        secretName: firefly-tls
+      rules:
+      - host: firefly.example.com
+        http:
+          paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: firefly
+                port:
+                  number: 80
+    ```
+  </Tab>
+  
+  <Tab title="Traefik">
+    ```yaml ingress-traefik.yaml
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: firefly-ingress
+      namespace: firefly
+      annotations:
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        traefik.ingress.kubernetes.io/router.tls: "true"
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+    spec:
+      ingressClassName: traefik
+      tls:
+      - hosts:
+        - firefly.example.com
+        secretName: firefly-tls
+      rules:
+      - host: firefly.example.com
+        http:
+          paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: firefly
+                port:
+                  number: 80
+    ```
+  </Tab>
+</Tabs>
+
+### CronJob for Recurring Transactions
+
+Firefly III requires a daily cron job:
+
+```yaml cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: firefly-cron
+  namespace: firefly
+spec:
+  schedule: "0 3 * * *"  # Run at 3 AM daily
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: cron
+            image: fireflyiii/core:latest
+            envFrom:
+            - configMapRef:
+                name: firefly-config
+            env:
+            - name: APP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: firefly-secrets
+                  key: APP_KEY
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: firefly-secrets
+                  key: DB_PASSWORD
+            command:
+            - php
+            - artisan
+            - schedule:run
+```
+
+## Deploying All Manifests
+
+Apply all manifests in order:
+
+```bash
+kubectl apply -f namespace.yaml
+kubectl apply -f secrets.yaml
+kubectl apply -f configmap.yaml
+kubectl apply -f pvc.yaml
+kubectl apply -f database-deployment.yaml
+kubectl apply -f firefly-deployment.yaml
+kubectl apply -f ingress.yaml
+kubectl apply -f cronjob.yaml
+```
+
+## Using PostgreSQL Instead
+
+To use PostgreSQL instead of MySQL:
+
+1. Update the ConfigMap:
+   ```yaml
+   DB_CONNECTION: "pgsql"
+   DB_PORT: "5432"
+   PGSQL_SCHEMA: "public"
+   ```
+
+2. Replace the database deployment with:
+   ```yaml
+   containers:
+   - name: postgres
+     image: postgres:15
+     env:
+     - name: POSTGRES_DB
+       value: firefly
+     - name: POSTGRES_USER
+       value: firefly
+     - name: POSTGRES_PASSWORD
+       valueFrom:
+         secretKeyRef:
+           name: firefly-secrets
+           key: DB_PASSWORD
+   ```
+
+## High Availability Configuration
+
+### Multiple Replicas
+
+Increase the replica count:
+
+```yaml
+spec:
+  replicas: 3
+```
+
+<Note>
+When running multiple replicas, ensure your storage supports `ReadWriteMany` for the upload volume, or use object storage (S3).
+</Note>
+
+### Session Affinity
+
+If not using Redis for sessions, enable sticky sessions:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: firefly
+  namespace: firefly
+spec:
+  selector:
+    app: firefly-app
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 3600
+  ports:
+  - port: 80
+    targetPort: 8080
+```
+
+### Redis for Caching (Recommended)
+
+Deploy Redis:
+
+```yaml redis.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: firefly
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: firefly
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+```
+
+Update the ConfigMap:
+
+```yaml
+CACHE_DRIVER: "redis"
+SESSION_DRIVER: "redis"
+REDIS_HOST: "redis"
+REDIS_PORT: "6379"
+REDIS_DB: "0"
+REDIS_CACHE_DB: "1"
+```
+
+## Resource Requirements
+
+### Minimum Requirements
+
+- **Firefly III Pod**: 256Mi RAM, 250m CPU
+- **Database Pod**: 256Mi RAM, 250m CPU
+- **Storage**: 10Gi for database, 5Gi for uploads
+
+### Recommended for Production
+
+- **Firefly III Pod**: 512Mi-1Gi RAM, 500m-1000m CPU
+- **Database Pod**: 1-2Gi RAM, 500m-1000m CPU
+- **Storage**: 20Gi+ for database, 10Gi+ for uploads
+
+## Backup and Restore
+
+### Database Backup
+
+Create a CronJob for regular backups:
+
+```yaml backup-cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: firefly-backup
+  namespace: firefly
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: backup
+            image: mariadb:latest
+            command:
+            - sh
+            - -c
+            - |
+              mysqldump -h firefly-db -u firefly -p$DB_PASSWORD firefly | \
+              gzip > /backup/firefly-$(date +%Y%m%d-%H%M%S).sql.gz
+            env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: firefly-secrets
+                  key: DB_PASSWORD
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backup
+          volumes:
+          - name: backup-storage
+            # Configure your backup storage here
+            persistentVolumeClaim:
+              claimName: backup-pvc
+```
+
+### Manual Backup
+
+```bash
+# Find the database pod
+DB_POD=$(kubectl get pod -n firefly -l app=firefly-db -o jsonpath="{.items[0].metadata.name}")
+
+# Create backup
+kubectl exec -n firefly $DB_POD -- mysqldump -u firefly -psecure_database_password firefly > backup.sql
+```
+
+### Restore from Backup
+
+```bash
+kubectl exec -i -n firefly $DB_POD -- mysql -u firefly -psecure_database_password firefly < backup.sql
+```
+
+## Monitoring
+
+### Health Checks
+
+Firefly III provides a health endpoint at `/health`.
+
+### Prometheus Metrics (Optional)
+
+Add ServiceMonitor if using Prometheus Operator:
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: firefly
+  namespace: firefly
+spec:
+  selector:
+    matchLabels:
+      app: firefly-app
+  endpoints:
+  - port: http
+    path: /metrics
+```
+
+## Troubleshooting
+
+### Check Pod Status
+
+```bash
+kubectl get pods -n firefly
+kubectl describe pod -n firefly <pod-name>
+```
+
+### View Logs
+
+```bash
+# Application logs
+kubectl logs -n firefly -l app=firefly-app --tail=100 -f
+
+# Database logs
+kubectl logs -n firefly -l app=firefly-db --tail=100 -f
+```
+
+### Database Connection Issues
+
+Test database connectivity:
+
+```bash
+kubectl exec -it -n firefly <firefly-pod-name> -- php artisan tinker
+```
+
+Then run:
+```php
+DB::connection()->getPdo();
+```
+
+### Persistent Volume Issues
+
+Check PVC status:
+
+```bash
+kubectl get pvc -n firefly
+kubectl describe pvc -n firefly firefly-db-pvc
+```
+
+## Upgrading
+
+<Steps>
+  <Step title="Update the image tag">
+    Edit the deployment:
+    ```bash
+    kubectl edit deployment -n firefly firefly-app
+    ```
+    
+    Change the image to a specific version:
+    ```yaml
+    image: fireflyiii/core:v6.1.0
+    ```
+  </Step>
+
+  <Step title="Apply the change">
+    Kubernetes will perform a rolling update automatically.
+  </Step>
+
+  <Step title="Monitor the rollout">
+    ```bash
+    kubectl rollout status deployment/firefly-app -n firefly
+    ```
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/installation/configuration">
+    Learn about environment variables and settings
+  </Card>
+  <Card title="Production Best Practices" icon="shield" href="/deployment/security">
+    Secure your Firefly III installation
+  </Card>
+</CardGroup>

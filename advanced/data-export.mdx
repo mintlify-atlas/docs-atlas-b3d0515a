@@ -1,0 +1,459 @@
+---
+title: Data export
+description: Export your financial data from Firefly III for backup, analysis, or migration
+---
+
+Firefly III provides multiple methods to export your financial data for backup, external analysis, or migration to other systems.
+
+## Export methods
+
+<CardGroup cols={2}>
+  <Card title="API export" icon="code" href="#api-export">
+    Programmatic data export via REST API
+  </Card>
+  <Card title="CSV export" icon="file-csv" href="#csv-export">
+    Export transactions and accounts as CSV
+  </Card>
+  <Card title="Command-line export" icon="terminal" href="#command-line-export">
+    Bulk export using artisan commands
+  </Card>
+  <Card title="Database backup" icon="database" href="/admin/backup-restore">
+    Complete database backup for disaster recovery
+  </Card>
+</CardGroup>
+
+## API export
+
+The Firefly III API provides comprehensive endpoints for exporting all your financial data.
+
+### Available export endpoints
+
+<Tabs>
+  <Tab title="Transactions">
+    Export transactions with full details:
+
+    ```bash
+    # Export all transactions for a date range
+    curl -X GET "https://your-firefly.local/api/v1/transactions?start=2024-01-01&end=2024-12-31&limit=500" \
+      -H "Authorization: Bearer YOUR_TOKEN" \
+      -H "Accept: application/json"
+    ```
+
+    Includes:
+    - Transaction details
+    - Splits
+    - Categories, budgets, tags
+    - Foreign amounts
+    - Notes and attachments
+  </Tab>
+  
+  <Tab title="Accounts">
+    Export account information:
+
+    ```bash
+    # Export all accounts
+    curl -X GET "https://your-firefly.local/api/v1/accounts?type=asset,expense,revenue" \
+      -H "Authorization: Bearer YOUR_TOKEN"
+    ```
+
+    Includes:
+    - Account details
+    - Balances
+    - Account roles
+    - Metadata
+  </Tab>
+  
+  <Tab title="Budgets">
+    Export budget data:
+
+    ```bash
+    # Export budgets with limits
+    curl -X GET "https://your-firefly.local/api/v1/budgets" \
+      -H "Authorization: Bearer YOUR_TOKEN"
+    ```
+
+    Includes:
+    - Budget information
+    - Budget limits by period
+    - Auto-budget settings
+  </Tab>
+  
+  <Tab title="Other resources">
+    Export additional data:
+
+    ```bash
+    # Categories
+    curl -X GET "https://your-firefly.local/api/v1/categories" \
+      -H "Authorization: Bearer YOUR_TOKEN"
+
+    # Tags
+    curl -X GET "https://your-firefly.local/api/v1/tags" \
+      -H "Authorization: Bearer YOUR_TOKEN"
+
+    # Rules
+    curl -X GET "https://your-firefly.local/api/v1/rules" \
+      -H "Authorization: Bearer YOUR_TOKEN"
+
+    # Piggy banks
+    curl -X GET "https://your-firefly.local/api/v1/piggy-banks" \
+      -H "Authorization: Bearer YOUR_TOKEN"
+    ```
+  </Tab>
+</Tabs>
+
+### Pagination
+
+API responses are paginated. To export all data:
+
+```bash
+#!/bin/bash
+page=1
+while true; do
+  response=$(curl -s "https://your-firefly.local/api/v1/transactions?page=$page" \
+    -H "Authorization: Bearer YOUR_TOKEN")
+  
+  # Save page data
+  echo "$response" >> transactions_page_$page.json
+  
+  # Check if more pages exist
+  if ! echo "$response" | grep -q '"next"'; then
+    break
+  fi
+  
+  page=$((page + 1))
+done
+```
+
+<Tip>Set a higher `limit` parameter (max 500) to reduce the number of requests needed</Tip>
+
+## CSV export
+
+Export transactions and accounts as CSV files for use in Excel, Google Sheets, or other applications.
+
+### Transaction CSV export
+
+<Steps>
+  <Step title="Navigate to transactions">
+    Go to **Transactions** > **List all transactions**
+  </Step>
+  
+  <Step title="Apply filters">
+    Filter transactions by:
+    - Date range
+    - Accounts
+    - Categories
+    - Budgets
+    - Tags
+  </Step>
+  
+  <Step title="Export">
+    Click **Export** and select **CSV format**
+  </Step>
+  
+  <Step title="Download">
+    Your CSV file will be generated and downloaded
+  </Step>
+</Steps>
+
+### CSV format
+
+Exported CSV includes these columns:
+
+| Column | Description |
+|--------|-------------|
+| ID | Transaction journal ID |
+| Date | Transaction date |
+| Description | Transaction description |
+| Source account | Source account name |
+| Destination account | Destination account name |
+| Amount | Transaction amount |
+| Currency | Currency code |
+| Category | Category name |
+| Budget | Budget name |
+| Tags | Comma-separated tags |
+| Notes | Transaction notes |
+| External ID | External identifier |
+
+<Info>CSV exports use semicolon (;) as separator by default. Configure in your user preferences.</Info>
+
+## Command-line export
+
+For bulk exports and automation, use the artisan command:
+
+```bash
+php artisan firefly-iii:export-data \
+  --user=1 \
+  --token=your-access-token \
+  --start=2024-01-01 \
+  --end=2024-12-31 \
+  --export_directory=/path/to/export \
+  --export-transactions \
+  --export-accounts \
+  --export-budgets \
+  --export-categories \
+  --export-tags \
+  --export-rules \
+  --export-piggies
+```
+
+### Command options
+
+<ParamField path="--user" type="integer" default="1">
+  User ID to export data for
+</ParamField>
+
+<ParamField path="--token" type="string" required>
+  User's access token for authentication
+</ParamField>
+
+<ParamField path="--start" type="date">
+  Start date for transaction export (YYYY-MM-DD)
+</ParamField>
+
+<ParamField path="--end" type="date">
+  End date for transaction export (YYYY-MM-DD)
+</ParamField>
+
+<ParamField path="--export_directory" type="string" default="./">
+  Directory to save export files
+</ParamField>
+
+<ParamField path="--export-transactions" type="boolean">
+  Export transactions
+</ParamField>
+
+<ParamField path="--export-accounts" type="boolean">
+  Export accounts
+</ParamField>
+
+<ParamField path="--export-budgets" type="boolean">
+  Export budgets
+</ParamField>
+
+<ParamField path="--export-categories" type="boolean">
+  Export categories
+</ParamField>
+
+<ParamField path="--export-tags" type="boolean">
+  Export tags
+</ParamField>
+
+<ParamField path="--export-recurring" type="boolean">
+  Export recurring transactions
+</ParamField>
+
+<ParamField path="--export-rules" type="boolean">
+  Export rules
+</ParamField>
+
+<ParamField path="--export-subscriptions" type="boolean">
+  Export bills/subscriptions
+</ParamField>
+
+<ParamField path="--export-piggies" type="boolean">
+  Export piggy banks
+</ParamField>
+
+<ParamField path="--force" type="boolean">
+  Overwrite existing export files
+</ParamField>
+
+### Output format
+
+The command creates CSV files:
+
+```
+export_directory/
+├── transactions_2024-01-01_2024-12-31.csv
+├── accounts.csv
+├── budgets.csv
+├── categories.csv
+├── tags.csv
+├── rules.csv
+├── recurring.csv
+├── subscriptions.csv
+└── piggy_banks.csv
+```
+
+## Automated exports
+
+Schedule regular exports using cron:
+
+```bash
+# Add to crontab (crontab -e)
+# Export data monthly
+0 0 1 * * cd /var/www/firefly-iii && php artisan firefly-iii:export-data --user=1 --token=YOUR_TOKEN --export-transactions --export-accounts --export_directory=/backups/monthly/$(date +\%Y-\%m)
+```
+
+<Warning>Store access tokens securely. Consider using environment variables or secret management systems.</Warning>
+
+## Export for analysis
+
+Export data for analysis in external tools:
+
+### Excel/Google Sheets
+
+1. Export transactions as CSV
+2. Open in Excel/Sheets
+3. Use pivot tables and charts for analysis
+4. Create custom reports
+
+### Python/R analysis
+
+```python
+import requests
+import pandas as pd
+
+# Fetch data via API
+headers = {'Authorization': 'Bearer YOUR_TOKEN'}
+response = requests.get(
+    'https://your-firefly.local/api/v1/transactions',
+    headers=headers,
+    params={'start': '2024-01-01', 'end': '2024-12-31', 'limit': 500}
+)
+
+# Convert to DataFrame
+data = response.json()['data']
+transactions = pd.json_normalize(data)
+
+# Analyze
+print(transactions.groupby('attributes.category_name')['attributes.amount'].sum())
+```
+
+### Business Intelligence tools
+
+Connect BI tools directly to Firefly III:
+
+1. **Power BI**: Use API connector
+2. **Tableau**: Connect via API or database
+3. **Metabase**: Connect to PostgreSQL/MySQL database
+4. **Grafana**: Create custom dashboards with database queries
+
+<Note>For direct database access, ensure you have read-only credentials and understand the database schema</Note>
+
+## Migration exports
+
+Export data for migration to another system:
+
+### Complete export
+
+For full data portability:
+
+```bash
+# Export everything
+php artisan firefly-iii:export-data \
+  --user=1 \
+  --token=YOUR_TOKEN \
+  --export-transactions \
+  --export-accounts \
+  --export-budgets \
+  --export-categories \
+  --export-tags \
+  --export-recurring \
+  --export-rules \
+  --export-subscriptions \
+  --export-piggies
+
+# Also backup attachments
+tar -czf attachments.tar.gz storage/upload
+
+# Backup database
+pg_dump firefly > firefly_backup.sql
+# or for MySQL:
+mysqldump firefly > firefly_backup.sql
+```
+
+### To other Firefly III instance
+
+Use the Data Importer:
+
+1. Export from source using command above
+2. Configure Data Importer with source Firefly III URL
+3. Authenticate and import data
+4. Verify imported data
+
+## Best practices
+
+<AccordionGroup>
+  <Accordion title="Regular backups">
+    Schedule automated exports:
+    - Weekly transaction exports
+    - Monthly complete exports
+    - Store in multiple locations
+    - Test restoration periodically
+  </Accordion>
+  
+  <Accordion title="Secure export files">
+    Protect exported data:
+    - Encrypt sensitive exports
+    - Use secure storage locations
+    - Implement access controls
+    - Delete old exports securely
+  </Accordion>
+  
+  <Accordion title="Verify exports">
+    After exporting:
+    - Check file sizes are reasonable
+    - Verify data completeness
+    - Test import/restore process
+    - Keep export logs
+  </Accordion>
+  
+  <Accordion title="Document export procedures">
+    Maintain documentation:
+    - Export schedule
+    - Storage locations
+    - Retention policies
+    - Recovery procedures
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<Accordion title="Export timeout">
+  **Problem**: Large exports timing out
+  
+  **Solutions**:
+  - Export in smaller date ranges
+  - Increase PHP max_execution_time
+  - Use command-line instead of web interface
+  - Increase API pagination limit
+</Accordion>
+
+<Accordion title="Missing data in export">
+  **Problem**: Exported data incomplete
+  
+  **Solutions**:
+  - Check date range filters
+  - Verify account filters
+  - Ensure all export flags are enabled
+  - Check user permissions
+  - Review export logs for errors
+</Accordion>
+
+<Accordion title="CSV encoding issues">
+  **Problem**: Special characters corrupted in CSV
+  
+  **Solutions**:
+  - Ensure UTF-8 encoding
+  - Check CSV separator settings
+  - Try different CSV reader (Excel, LibreOffice)
+  - Export via API as JSON instead
+</Accordion>
+
+## Related documentation
+
+<CardGroup cols={2}>
+  <Card title="Backup & restore" icon="hard-drive" href="/admin/backup-restore">
+    Complete backup procedures
+  </Card>
+  <Card title="Data import" icon="download" href="/advanced/data-import">
+    Import data into Firefly III
+  </Card>
+  <Card title="API reference" icon="code" href="/api/overview">
+    API documentation for exports
+  </Card>
+  <Card title="Data operations" icon="database" href="/api/data-operations">
+    Bulk data operations via API
+  </Card>
+</CardGroup>

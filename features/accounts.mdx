@@ -1,0 +1,238 @@
+---
+title: "Accounts"
+description: "Manage your financial accounts in Firefly III"
+---
+
+## Overview
+
+Accounts are the foundation of Firefly III. They represent where your money is stored and where it flows to and from. Understanding account types and how to manage them effectively is essential for tracking your finances.
+
+## Account Types
+
+Firefly III uses different account types to organize your financial data:
+
+<CardGroup cols={2}>
+  <Card title="Asset Accounts" icon="wallet">
+    Your personal accounts like checking accounts, savings accounts, and cash wallets. This is where you store your money.
+  </Card>
+  
+  <Card title="Expense Accounts" icon="cart-shopping">
+    Places where you spend money, like grocery stores, landlords, or utility companies.
+  </Card>
+  
+  <Card title="Revenue Accounts" icon="money-bill-wave">
+    Sources of income such as your employer, clients, or interest payments.
+  </Card>
+  
+  <Card title="Liability Accounts" icon="credit-card">
+    Debts and loans like credit cards, mortgages, or personal loans.
+  </Card>
+</CardGroup>
+
+## Creating an Account
+
+<Steps>
+  <Step title="Navigate to Accounts">
+    Go to **Accounts** in the main navigation menu.
+  </Step>
+  
+  <Step title="Choose Account Type">
+    Click **Create New Account** and select the appropriate account type.
+  </Step>
+  
+  <Step title="Enter Account Details">
+    Fill in the required information:
+    - **Name**: A descriptive name for the account
+    - **Account Number** (optional): Your actual account number
+    - **IBAN** (optional): International Bank Account Number
+    - **Currency**: The currency this account uses
+    - **Opening Balance**: Starting balance for the account
+  </Step>
+  
+  <Step title="Configure Additional Settings">
+    Set optional features:
+    - **Virtual Balance**: Add a credit limit or overdraft protection
+    - **Active/Inactive**: Control whether the account appears in lists
+    - **Notes**: Add any relevant information about the account
+  </Step>
+  
+  <Step title="Save">
+    Click **Save** to create your account.
+  </Step>
+</Steps>
+
+## Managing Asset Accounts
+
+Asset accounts are your personal accounts where you keep money.
+
+### Setting Up Your First Asset Account
+
+<Tip>
+Start by creating accounts for checking accounts, savings accounts, and any physical cash you track.
+</Tip>
+
+**Common Asset Account Examples:**
+- Checking Account
+- Savings Account
+- Cash Wallet
+- Investment Account
+- PayPal Balance
+
+### Virtual Balance
+
+The virtual balance feature lets you add a credit limit or buffer to your account:
+
+<Accordion title="What is a virtual balance?">
+  A virtual balance adjusts how Firefly III displays your account balance. For example, if your checking account has a $500 overdraft limit, set a virtual balance of -$500. Your "available" balance will show as actual balance + $500.
+</Accordion>
+
+## Expense and Revenue Accounts
+
+Expense and revenue accounts are automatically created when you create transactions, but you can also create them manually.
+
+### When to Create Manually
+
+<Note>
+Create expense/revenue accounts manually when:
+- You want to set up accounts before recording transactions
+- You need to merge similar accounts (e.g., "Amazon" and "Amazon.com")
+- You want to add notes or organize accounts in advance
+</Note>
+
+## Account Features
+
+### Account Numbers and IBAN
+
+Store your actual account numbers for reference:
+- Helps identify accounts when importing transactions
+- Useful for reconciliation
+- Never shared externally (Firefly III is self-hosted)
+
+### Opening Balance
+
+The opening balance sets your account's starting point:
+
+<Warning>
+The opening balance creates a special "initial balance" transaction. Be careful when editing it, as it affects all historical reports.
+</Warning>
+
+### Active vs Inactive Accounts
+
+- **Active accounts** appear in dropdowns and account lists
+- **Inactive accounts** are hidden but retain all historical data
+- Use inactive status for closed accounts you want to keep for historical purposes
+
+## Account Dashboard
+
+Each account has its own dashboard showing:
+
+- **Current Balance**: Your account balance right now
+- **Transaction History**: Recent activity in the account
+- **Charts**: Visual representation of balance over time
+- **Reconciliation Status**: Track if your balance matches bank statements
+
+## Organizing Accounts
+
+### Account Order
+
+Customize the order accounts appear in lists:
+1. Go to the **Accounts** page
+2. Use drag-and-drop to reorder accounts
+3. Order is saved automatically
+
+### Account Groups
+
+Group related accounts together using Object Groups (see the Groups feature documentation).
+
+## Best Practices
+
+<Accordion title="Keep Account Names Clear and Consistent">
+  Use descriptive names that make sense to you. Instead of "Account 1234", use "Chase Checking" or "Main Spending Account".
+</Accordion>
+
+<Accordion title="Don't Create Too Many Asset Accounts">
+  Only create asset accounts for money you actually control. Don't create separate accounts for every spending category—use budgets and categories instead.
+</Accordion>
+
+<Accordion title="Set Realistic Opening Balances">
+  Use your actual account balance at the time you start using Firefly III. This ensures accurate reporting from day one.
+</Accordion>
+
+<Accordion title="Use Virtual Balances Wisely">
+  Virtual balances are useful for credit limits, but don't use them to "fudge" your actual balance. Keep your data accurate.
+</Accordion>
+
+## Reconciliation
+
+Reconciliation helps you verify that Firefly III matches your actual bank statements:
+
+<Steps>
+  <Step title="Open Account Details">
+    Navigate to the account you want to reconcile.
+  </Step>
+  
+  <Step title="Start Reconciliation">
+    Click **Reconcile** and enter your bank statement balance.
+  </Step>
+  
+  <Step title="Review Differences">
+    Firefly III shows the difference between its balance and your statement.
+  </Step>
+  
+  <Step title="Find Discrepancies">
+    Review recent transactions to find missing or incorrect entries.
+  </Step>
+  
+  <Step title="Create Reconciliation Transaction">
+    If needed, create a reconciliation transaction to adjust the balance.
+  </Step>
+</Steps>
+
+## Common Use Cases
+
+### Multiple Bank Accounts
+
+If you have multiple bank accounts:
+- Create a separate asset account for each
+- Use transfers to move money between them
+- Each account maintains its own balance and history
+
+### Joint Accounts
+
+For joint accounts:
+- Create one asset account for the joint account
+- Use categories and tags to identify who spent what
+- Both partners can access the same Firefly III instance
+
+### Foreign Currency Accounts
+
+Firefly III supports multiple currencies:
+- Set the account currency when creating it
+- Firefly III handles currency conversion automatically
+- View balances in your default currency or the account's currency
+
+## Troubleshooting
+
+<Accordion title="My account balance is wrong">
+  Check these common issues:
+  - Verify the opening balance is correct
+  - Look for duplicate transactions
+  - Check if any transactions are assigned to the wrong account
+  - Ensure transfers between accounts are properly matched
+</Accordion>
+
+<Accordion title="I can't delete an account">
+  Accounts with transactions cannot be deleted. Instead:
+  - Mark the account as inactive to hide it
+  - Or, delete all transactions first (carefully!)
+</Accordion>
+
+<Accordion title="Virtual balance isn't working as expected">
+  Remember: virtual balance is display-only. It adjusts how balances are shown but doesn't affect actual calculations in reports or budgets.
+</Accordion>
+
+## Related Features
+
+- [Transactions](/features/transactions) - Record money movement between accounts
+- [Piggy Banks](/features/piggy-banks) - Save money within asset accounts
+- [Recurring Transactions](/features/recurring-transactions) - Automate regular account transactions

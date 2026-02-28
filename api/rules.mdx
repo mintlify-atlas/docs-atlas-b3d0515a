@@ -1,0 +1,541 @@
+---
+title: Rules API
+description: Automate transaction processing with powerful rules engine
+---
+
+## Overview
+
+The Rules API allows you to create automation rules that process transactions based on triggers and actions. Rules can automatically categorize transactions, set budgets, update descriptions, and perform many other actions based on conditions you define.
+
+## List All Rules
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/rules" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/rules`
+
+### Query Parameters
+
+<ParamField query="page" type="integer">
+  Page number for pagination
+</ParamField>
+
+### Response Fields
+
+<ResponseField name="id" type="string">
+  Rule ID
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of creation
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp of last update
+</ResponseField>
+
+<ResponseField name="rule_group_id" type="string">
+  Rule group ID
+</ResponseField>
+
+<ResponseField name="rule_group_title" type="string">
+  Rule group title
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Rule title
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Rule description
+</ResponseField>
+
+<ResponseField name="order" type="integer">
+  Execution order within group
+</ResponseField>
+
+<ResponseField name="active" type="boolean">
+  Whether the rule is active
+</ResponseField>
+
+<ResponseField name="strict" type="boolean">
+  If true, all triggers must match (AND). If false, any trigger can match (OR)
+</ResponseField>
+
+<ResponseField name="stop_processing" type="boolean">
+  Stop processing other rules after this one executes
+</ResponseField>
+
+<ResponseField name="trigger" type="string">
+  When to trigger: `store-journal`, `update-journal`, or `manual-activation`
+</ResponseField>
+
+<ResponseField name="triggers" type="array">
+  Array of trigger conditions
+</ResponseField>
+
+<ResponseField name="actions" type="array">
+  Array of actions to perform
+</ResponseField>
+
+### Trigger Object
+
+<ResponseField name="triggers[].id" type="string">
+  Trigger ID
+</ResponseField>
+
+<ResponseField name="triggers[].type" type="string">
+  Trigger type (e.g., `description_contains`, `amount_more`, `source_account_is`)
+</ResponseField>
+
+<ResponseField name="triggers[].value" type="string">
+  Trigger value to match against
+</ResponseField>
+
+<ResponseField name="triggers[].prohibited" type="boolean">
+  If true, inverts the trigger (NOT condition)
+</ResponseField>
+
+<ResponseField name="triggers[].order" type="integer">
+  Trigger order
+</ResponseField>
+
+<ResponseField name="triggers[].active" type="boolean">
+  Whether this trigger is active
+</ResponseField>
+
+<ResponseField name="triggers[].stop_processing" type="boolean">
+  Stop processing other triggers after this one
+</ResponseField>
+
+### Action Object
+
+<ResponseField name="actions[].id" type="string">
+  Action ID
+</ResponseField>
+
+<ResponseField name="actions[].type" type="string">
+  Action type (e.g., `set_category`, `set_budget`, `add_tag`)
+</ResponseField>
+
+<ResponseField name="actions[].value" type="string">
+  Action value/parameter
+</ResponseField>
+
+<ResponseField name="actions[].order" type="integer">
+  Action execution order
+</ResponseField>
+
+<ResponseField name="actions[].active" type="boolean">
+  Whether this action is active
+</ResponseField>
+
+<ResponseField name="actions[].stop_processing" type="boolean">
+  Stop processing other actions after this one
+</ResponseField>
+
+## Create Rule
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://demo.firefly-iii.org/api/v1/rules" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Categorize Amazon Purchases",
+    "description": "Auto-categorize Amazon transactions",
+    "rule_group_id": "1",
+    "trigger": "store-journal",
+    "strict": false,
+    "active": true,
+    "stop_processing": false,
+    "triggers": [
+      {
+        "type": "description_contains",
+        "value": "AMAZON",
+        "prohibited": false,
+        "active": true
+      }
+    ],
+    "actions": [
+      {
+        "type": "set_category",
+        "value": "Shopping",
+        "active": true
+      },
+      {
+        "type": "add_tag",
+        "value": "online-purchase",
+        "active": true
+      }
+    ]
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `POST /v1/rules`
+
+### Request Body
+
+<ParamField body="title" type="string" required>
+  Rule title (1-100 characters, must be unique)
+</ParamField>
+
+<ParamField body="description" type="string">
+  Rule description (1-32,768 characters)
+</ParamField>
+
+<ParamField body="rule_group_id" type="integer">
+  Rule group ID (required without rule_group_title)
+</ParamField>
+
+<ParamField body="rule_group_title" type="string">
+  Rule group title (1-255 characters, required without rule_group_id)
+</ParamField>
+
+<ParamField body="trigger" type="string" required>
+  When to trigger: `store-journal`, `update-journal`, or `manual-activation`
+</ParamField>
+
+<ParamField body="strict" type="boolean" default="false">
+  If true, ALL triggers must match (AND logic). If false, ANY trigger matching executes the rule (OR logic)
+</ParamField>
+
+<ParamField body="stop_processing" type="boolean" default="false">
+  Stop processing remaining rules after this one executes
+</ParamField>
+
+<ParamField body="active" type="boolean" default="true">
+  Whether the rule is active
+</ParamField>
+
+<ParamField body="triggers" type="array" required>
+  Array of trigger objects (minimum 1, at least 1 must be active)
+</ParamField>
+
+<ParamField body="actions" type="array" required>
+  Array of action objects (minimum 1, at least 1 must be active)
+</ParamField>
+
+### Trigger Object Fields
+
+<ParamField body="triggers[].type" type="string" required>
+  Trigger type (see Trigger Types below)
+</ParamField>
+
+<ParamField body="triggers[].value" type="string">
+  Value to match (required for most trigger types, max 1024 characters)
+</ParamField>
+
+<ParamField body="triggers[].prohibited" type="boolean" default="false">
+  Invert the trigger (NOT condition)
+</ParamField>
+
+<ParamField body="triggers[].active" type="boolean" default="true">
+  Whether this trigger is active
+</ParamField>
+
+<ParamField body="triggers[].stop_processing" type="boolean" default="false">
+  Stop processing other triggers after this one
+</ParamField>
+
+### Action Object Fields
+
+<ParamField body="actions[].type" type="string" required>
+  Action type (see Action Types below)
+</ParamField>
+
+<ParamField body="actions[].value" type="string">
+  Action value/parameter (required for most action types)
+</ParamField>
+
+<ParamField body="actions[].active" type="boolean" default="true">
+  Whether this action is active
+</ParamField>
+
+<ParamField body="actions[].stop_processing" type="boolean" default="false">
+  Stop processing other actions after this one
+</ParamField>
+
+## Common Trigger Types
+
+### Transaction Properties
+
+- `description_contains` - Description contains text
+- `description_starts` - Description starts with text
+- `description_ends` - Description ends with text
+- `description_is` - Description exactly matches
+- `amount_less` - Amount less than value
+- `amount_more` - Amount more than value
+- `amount_exactly` - Amount exactly equals
+- `date_is` - Date is specific date
+- `date_before` - Date before specific date
+- `date_after` - Date after specific date
+
+### Account Triggers
+
+- `source_account_starts` - Source account name starts with
+- `source_account_ends` - Source account name ends with
+- `source_account_contains` - Source account name contains
+- `source_account_is` - Source account exactly matches
+- `destination_account_starts` - Destination account starts with
+- `destination_account_ends` - Destination account ends with
+- `destination_account_contains` - Destination account contains
+- `destination_account_is` - Destination exactly matches
+
+### Other Conditions
+
+- `transaction_type` - Transaction type is (withdrawal/deposit/transfer)
+- `category_is` - Category is specific category
+- `budget_is` - Budget is specific budget
+- `tag_is` - Has specific tag
+- `notes_contain` - Notes contain text
+- `no_category` - Has no category
+- `no_budget` - Has no budget
+- `no_tag` - Has no tags
+- `has_attachments` - Has attachments
+- `has_no_attachments` - Has no attachments
+
+## Common Action Types
+
+### Set Properties
+
+- `set_category` - Set category by name
+- `set_budget` - Set budget by name
+- `clear_category` - Remove category
+- `clear_budget` - Remove budget
+- `add_tag` - Add tag
+- `remove_tag` - Remove tag
+- `remove_all_tags` - Remove all tags
+- `set_description` - Set description
+- `append_description` - Append to description
+- `prepend_description` - Prepend to description
+
+### Account Actions
+
+- `set_source_account` - Change source account
+- `set_destination_account` - Change destination account
+
+### Other Actions
+
+- `set_notes` - Set notes
+- `append_notes` - Append to notes
+- `clear_notes` - Remove notes
+- `link_to_bill` - Link to bill
+- `convert_withdrawal` - Convert to withdrawal
+- `convert_deposit` - Convert to deposit
+- `convert_transfer` - Convert to transfer
+
+<Info>
+**Trigger Timing:**
+
+- **store-journal**: Runs when a new transaction is created
+- **update-journal**: Runs when a transaction is updated
+- **manual-activation**: Only runs when manually triggered
+</Info>
+
+## Get Rule by ID
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/rules/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/rules/{id}`
+
+Returns the same response fields as the List endpoint.
+
+## Update Rule
+
+<CodeGroup>
+```bash cURL
+curl -X PUT "https://demo.firefly-iii.org/api/v1/rules/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Updated Amazon Rule",
+    "active": true,
+    "triggers": [
+      {
+        "type": "description_contains",
+        "value": "AMAZON"
+      },
+      {
+        "type": "description_contains",
+        "value": "AMZ"
+      }
+    ]
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `PUT /v1/rules/{id}`
+
+Accepts the same parameters as Create Rule. All fields are optional.
+
+## Delete Rule
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE "https://demo.firefly-iii.org/api/v1/rules/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `DELETE /v1/rules/{id}`
+
+Deletes the rule. Does not affect transactions that were already processed.
+
+## Test Rule
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/rules/{id}/test" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/rules/{id}/test`
+
+Tests the rule against existing transactions to see which ones would be affected.
+
+### Query Parameters
+
+<ParamField query="start" type="string">
+  Start date for test range (YYYY-MM-DD)
+</ParamField>
+
+<ParamField query="end" type="string">
+  End date for test range (YYYY-MM-DD)
+</ParamField>
+
+## Trigger Rule
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://demo.firefly-iii.org/api/v1/rules/{id}/trigger" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "start_date": "2024-01-01",
+    "end_date": "2024-12-31"
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `POST /v1/rules/{id}/trigger`
+
+Manually executes the rule on existing transactions within the specified date range.
+
+### Request Body
+
+<ParamField body="start_date" type="string">
+  Start date (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="end_date" type="string">
+  End date (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="accounts" type="array">
+  Array of account IDs to limit processing to
+</ParamField>
+
+## Validate Expression
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/rules/validate-expression?expression=AMAZON" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/rules/validate-expression`
+
+Validates a rule expression before creating a rule.
+
+### Query Parameters
+
+<ParamField query="expression" type="string" required>
+  Expression to validate
+</ParamField>
+
+## Best Practices
+
+### Rule Organization
+
+1. **Use rule groups**: Organize related rules into groups
+2. **Order matters**: Rules execute in order; place most important rules first
+3. **Use stop_processing**: Prevent unnecessary rule execution after a match
+4. **Test before activating**: Use the test endpoint to verify rule behavior
+
+### Efficient Trigger Design
+
+1. **Be specific**: Use exact matches when possible (`description_is` vs `description_contains`)
+2. **Combine triggers**: Use multiple triggers with strict=true for precise matching
+3. **Use prohibited wisely**: NOT conditions can slow down processing
+4. **Deactivate unused triggers**: Keep rules lean by removing inactive triggers
+
+### Action Best Practices
+
+1. **One action per purpose**: Don't overcomplicate with too many actions
+2. **Order actions logically**: Some actions depend on others
+3. **Avoid conflicts**: Don't create rules that contradict each other
+4. **Use clear values**: Make action values descriptive and consistent
+
+### Example: Multi-Condition Rule
+
+```json
+{
+  "title": "Business Expenses",
+  "strict": true,
+  "triggers": [
+    {
+      "type": "amount_more",
+      "value": "50.00"
+    },
+    {
+      "type": "description_contains",
+      "value": "business"
+    },
+    {
+      "type": "no_category",
+      "value": "true"
+    }
+  ],
+  "actions": [
+    {
+      "type": "set_category",
+      "value": "Business Expense"
+    },
+    {
+      "type": "add_tag",
+      "value": "tax-deductible"
+    },
+    {
+      "type": "append_notes",
+      "value": "Auto-categorized by rule"
+    }
+  ]
+}
+```
+
+This rule:
+- Only processes transactions over $50
+- That contain "business" in the description
+- That don't already have a category
+- Then sets category, adds tag, and appends a note

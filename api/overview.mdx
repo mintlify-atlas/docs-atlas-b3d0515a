@@ -1,0 +1,271 @@
+---
+title: API Overview
+description: Introduction to the Firefly III REST API v1
+---
+
+Firefly III provides a comprehensive RESTful API for programmatic access to all features of your personal finance manager.
+
+## Base URL
+
+All API endpoints are prefixed with:
+
+```
+/api/v1
+```
+
+Example full URL:
+```
+https://your-firefly-instance.com/api/v1/accounts
+```
+
+## API Versioning
+
+Firefly III uses URL-based API versioning. The current version is **v1**, indicated by the `/v1/` prefix in all endpoint URLs.
+
+The API version matches the Firefly III application version and is returned in the `/api/v1/about` endpoint.
+
+## Response Format
+
+The API uses **JSON API specification** for structured responses.
+
+### Content Type
+
+All responses use one of two content types:
+- `application/vnd.api+json` - JSON API format (default)
+- `application/json` - Standard JSON format
+
+### Accept Headers
+
+Your requests must include an Accept header with one of:
+- `application/json`
+- `application/vnd.api+json`
+
+<CodeGroup>
+```bash Example Request
+curl -X GET "https://your-firefly-instance.com/api/v1/about" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Success Response
+
+<ResponseField name="data" type="object">
+  The main response data object containing the requested resource(s)
+</ResponseField>
+
+<ResponseField name="meta" type="object">
+  Metadata about the response, including pagination information
+</ResponseField>
+
+<ResponseField name="links" type="object">
+  HATEOAS links for navigation (pagination, related resources)
+</ResponseField>
+
+<CodeGroup>
+```json Example Response
+{
+  "data": {
+    "type": "accounts",
+    "id": "1",
+    "attributes": {
+      "name": "Checking Account",
+      "type": "asset",
+      "currency_code": "USD"
+    }
+  },
+  "meta": {
+    "pagination": {
+      "total": 100,
+      "count": 50,
+      "per_page": 50,
+      "current_page": 1,
+      "total_pages": 2
+    }
+  },
+  "links": {
+    "self": "https://your-firefly-instance.com/api/v1/accounts?page=1",
+    "first": "https://your-firefly-instance.com/api/v1/accounts?page=1",
+    "next": "https://your-firefly-instance.com/api/v1/accounts?page=2",
+    "last": "https://your-firefly-instance.com/api/v1/accounts?page=2"
+  }
+}
+```
+</CodeGroup>
+
+## Error Handling
+
+The API returns standard HTTP status codes and JSON error responses.
+
+### HTTP Status Codes
+
+| Status Code | Description |
+|------------|-------------|
+| 200 | OK - Request succeeded |
+| 201 | Created - Resource created successfully |
+| 204 | No Content - Request succeeded with no response body |
+| 400 | Bad Request - Invalid request parameters |
+| 401 | Unauthorized - Invalid or missing authentication |
+| 403 | Forbidden - Insufficient permissions |
+| 404 | Not Found - Resource not found |
+| 422 | Unprocessable Entity - Validation errors |
+| 500 | Internal Server Error - Server error |
+
+### Error Response Format
+
+<CodeGroup>
+```json Error Response
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "name": [
+      "The name field is required."
+    ],
+    "type": [
+      "The selected type is invalid."
+    ]
+  }
+}
+```
+</CodeGroup>
+
+<ResponseField name="message" type="string">
+  Human-readable error message
+</ResponseField>
+
+<ResponseField name="errors" type="object">
+  Field-specific validation errors (when applicable)
+</ResponseField>
+
+## Pagination
+
+List endpoints support pagination using query parameters.
+
+<ParamField query="page" type="integer" default="1">
+  Page number to retrieve (minimum: 1, maximum: 65536)
+</ParamField>
+
+<ParamField query="limit" type="integer" default="50">
+  Number of items per page (minimum: 1, maximum: 65536)
+</ParamField>
+
+<CodeGroup>
+```bash Pagination Example
+curl -X GET "https://your-firefly-instance.com/api/v1/transactions?page=2&limit=100" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Pagination Response
+
+Paginated responses include metadata:
+
+<ResponseField name="meta.pagination.total" type="integer">
+  Total number of items across all pages
+</ResponseField>
+
+<ResponseField name="meta.pagination.count" type="integer">
+  Number of items in the current page
+</ResponseField>
+
+<ResponseField name="meta.pagination.per_page" type="integer">
+  Items per page
+</ResponseField>
+
+<ResponseField name="meta.pagination.current_page" type="integer">
+  Current page number
+</ResponseField>
+
+<ResponseField name="meta.pagination.total_pages" type="integer">
+  Total number of pages
+</ResponseField>
+
+## Date Parameters
+
+Many endpoints accept date parameters for filtering.
+
+<ParamField query="start" type="date">
+  Start date in `YYYY-MM-DD` format
+</ParamField>
+
+<ParamField query="end" type="date">
+  End date in `YYYY-MM-DD` format
+</ParamField>
+
+<CodeGroup>
+```bash Date Filter Example
+curl -X GET "https://your-firefly-instance.com/api/v1/transactions?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+## System Information
+
+Retrieve information about your Firefly III instance.
+
+### Get System Information
+
+<CodeGroup>
+```bash Get About Info
+curl -X GET "https://your-firefly-instance.com/api/v1/about" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "data": {
+    "version": "6.1.0",
+    "api_version": "2.0.0",
+    "php_version": "8.5.0",
+    "os": "Linux",
+    "driver": "mysql"
+  }
+}
+```
+</CodeGroup>
+
+### Get Current User
+
+<CodeGroup>
+```bash Get User Info
+curl -X GET "https://your-firefly-instance.com/api/v1/about/user" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+<Note>
+The `/api/v1/about` endpoint returns version information and system details about your Firefly III installation.
+</Note>
+
+## Rate Limiting
+
+Firefly III does not enforce API rate limits by default, but your hosting environment may impose limits.
+
+<Warning>
+Always implement proper error handling and retry logic in your API client to handle potential rate limiting or service interruptions.
+</Warning>
+
+## CORS Support
+
+Cross-Origin Resource Sharing (CORS) is supported. Configure CORS settings in your Firefly III installation if you're accessing the API from a web browser.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/api/authentication">
+    Learn how to authenticate API requests with OAuth2
+  </Card>
+  <Card title="Search API" icon="magnifying-glass" href="/api/search">
+    Search transactions and accounts
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/api/webhooks">
+    Configure webhooks for real-time notifications
+  </Card>
+  <Card title="Data Operations" icon="database" href="/api/data-operations">
+    Bulk operations and data export
+  </Card>
+</CardGroup>

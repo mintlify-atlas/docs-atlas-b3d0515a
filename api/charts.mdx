@@ -1,0 +1,439 @@
+---
+title: Charts API
+description: Get chart-ready financial data for visualization and reporting
+---
+
+The Charts API provides pre-formatted data structures designed for creating financial charts and visualizations.
+
+## Overview
+
+Chart endpoints return time-series data optimized for graphing libraries. Data includes:
+- Date-indexed values for time-series charts
+- Currency information for proper formatting
+- Primary currency conversion when enabled
+- Period-based grouping (daily, weekly, monthly)
+
+<Info>
+Chart data is returned in a format compatible with popular JavaScript charting libraries like Chart.js and similar frameworks.
+</Info>
+
+## Account Charts
+
+Visualize account balances over time.
+
+### Base Path
+```
+/api/v1/chart/account
+```
+
+### Get Account Overview Chart
+
+Retrieve balance data for accounts over a specified period.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/chart/account/overview?start=2024-01-01&end=2024-12-31&accounts=1,2,3" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+[
+  {
+    "label": "Checking Account",
+    "currency_id": "1",
+    "currency_name": "US Dollar",
+    "currency_code": "USD",
+    "currency_symbol": "$",
+    "currency_decimal_places": 2,
+    "primary_currency_id": "1",
+    "date": "2024-01-01T00:00:00+00:00",
+    "start_date": "2024-01-01T00:00:00+00:00",
+    "end_date": "2024-12-31T23:59:59+00:00",
+    "type": "line",
+    "yAxisID": 0,
+    "period": "1D",
+    "entries": {
+      "2024-01-01T00:00:00+00:00": "1000.00",
+      "2024-01-02T00:00:00+00:00": "950.50",
+      "2024-01-03T00:00:00+00:00": "1200.75"
+    }
+  }
+]
+```
+</CodeGroup>
+
+<ParamField query="start" type="date" required>
+  Start date in `YYYY-MM-DD` format
+</ParamField>
+
+<ParamField query="end" type="date" required>
+  End date in `YYYY-MM-DD` format
+</ParamField>
+
+<ParamField query="accounts" type="string" required>
+  Comma-separated list of account IDs
+</ParamField>
+
+<ParamField query="period" type="string" default="1D">
+  Time period for data points. Options: `1D` (daily), `1W` (weekly), `1M` (monthly), `1Y` (yearly)
+</ParamField>
+
+<ResponseField name="label" type="string">
+  Account name for the chart legend
+</ResponseField>
+
+<ResponseField name="currency_id" type="string">
+  ID of the account's currency
+</ResponseField>
+
+<ResponseField name="currency_code" type="string">
+  Currency code (USD, EUR, etc.)
+</ResponseField>
+
+<ResponseField name="currency_symbol" type="string">
+  Currency symbol ($, €, etc.)
+</ResponseField>
+
+<ResponseField name="currency_decimal_places" type="integer">
+  Number of decimal places for the currency
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  Chart type (typically "line" for account balances)
+</ResponseField>
+
+<ResponseField name="period" type="string">
+  Period interval used for data points
+</ResponseField>
+
+<ResponseField name="entries" type="object">
+  Object with ISO date strings as keys and balance amounts as values
+</ResponseField>
+
+<ResponseField name="pc_entries" type="object">
+  Primary currency converted values (when conversion is enabled)
+</ResponseField>
+
+## Balance Charts
+
+Visualize overall financial balance.
+
+### Base Path
+```
+/api/v1/chart/balance
+```
+
+### Get Balance Chart
+
+Retrieve balance data across all asset accounts.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/chart/balance/balance?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+<ParamField query="start" type="date" required>
+  Start date in `YYYY-MM-DD` format
+</ParamField>
+
+<ParamField query="end" type="date" required>
+  End date in `YYYY-MM-DD` format
+</ParamField>
+
+<ParamField query="period" type="string" default="1D">
+  Time period for grouping
+</ParamField>
+
+## Budget Charts
+
+Visualize budget usage and limits.
+
+### Base Path
+```
+/api/v1/chart/budget
+```
+
+### Get Budget Overview Chart
+
+Retrieve spending vs budget data.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/chart/budget/overview?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+<ParamField query="start" type="date" required>
+  Start date in `YYYY-MM-DD` format
+</ParamField>
+
+<ParamField query="end" type="date" required>
+  End date in `YYYY-MM-DD` format
+</ParamField>
+
+<ParamField query="budgets" type="string">
+  Comma-separated list of budget IDs to include
+</ParamField>
+
+## Category Charts
+
+Visualize spending and income by category.
+
+### Base Path
+```
+/api/v1/chart/category
+```
+
+### Get Category Overview Chart
+
+Retrieve transaction data grouped by category.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/chart/category/overview?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+[
+  {
+    "label": "Groceries",
+    "currency_code": "USD",
+    "entries": {
+      "2024-01-01T00:00:00+00:00": "150.25",
+      "2024-02-01T00:00:00+00:00": "200.50",
+      "2024-03-01T00:00:00+00:00": "175.00"
+    }
+  },
+  {
+    "label": "Transportation",
+    "currency_code": "USD",
+    "entries": {
+      "2024-01-01T00:00:00+00:00": "80.00",
+      "2024-02-01T00:00:00+00:00": "85.00",
+      "2024-03-01T00:00:00+00:00": "90.00"
+    }
+  }
+]
+```
+</CodeGroup>
+
+<ParamField query="start" type="date" required>
+  Start date in `YYYY-MM-DD` format
+</ParamField>
+
+<ParamField query="end" type="date" required>
+  End date in `YYYY-MM-DD` format
+</ParamField>
+
+<ParamField query="categories" type="string">
+  Comma-separated list of category IDs to include
+</ParamField>
+
+## Period Options
+
+All chart endpoints support period-based data grouping:
+
+| Period | Description | Example Use Case |
+|--------|-------------|------------------|
+| `1D` | Daily | Detailed daily tracking |
+| `1W` | Weekly | Weekly spending patterns |
+| `1M` | Monthly | Monthly budget analysis |
+| `3M` | Quarterly | Quarterly reports |
+| `1Y` | Yearly | Annual comparisons |
+
+## Primary Currency Conversion
+
+When enabled in user preferences, chart data includes primary currency conversion:
+
+<CodeGroup>
+```json With Primary Currency
+{
+  "label": "Euro Savings",
+  "currency_code": "EUR",
+  "primary_currency_id": "1",
+  "primary_currency_code": "USD",
+  "primary_currency_symbol": "$",
+  "primary_currency_decimal_places": 2,
+  "entries": {
+    "2024-01-01T00:00:00+00:00": "1000.00"
+  },
+  "pc_entries": {
+    "2024-01-01T00:00:00+00:00": "1100.00"
+  }
+}
+```
+</CodeGroup>
+
+<ResponseField name="pc_entries" type="object">
+  Primary currency converted amounts, using exchange rates from the transaction dates
+</ResponseField>
+
+## Chart Data Structure
+
+All chart endpoints return an array of datasets with this structure:
+
+<ResponseField name="label" type="string">
+  Dataset label for the chart legend
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  Chart type (line, bar, etc.)
+</ResponseField>
+
+<ResponseField name="yAxisID" type="integer">
+  Y-axis identifier for multi-axis charts
+</ResponseField>
+
+<ResponseField name="entries" type="object">
+  Time-series data with ISO date strings as keys and amounts as string values
+</ResponseField>
+
+<ResponseField name="currency_*" type="string">
+  Currency metadata fields for proper formatting
+</ResponseField>
+
+## Integration with Chart.js
+
+The data structure is designed for easy integration with Chart.js:
+
+<CodeGroup>
+```javascript Chart.js Example
+fetch('https://your-firefly-instance.com/api/v1/chart/account/overview?start=2024-01-01&end=2024-12-31&accounts=1', {
+  headers: {
+    'Accept': 'application/json',
+    'Authorization': 'Bearer YOUR_ACCESS_TOKEN'
+  }
+})
+.then(response => response.json())
+.then(chartData => {
+  const datasets = chartData.map(dataset => ({
+    label: dataset.label,
+    data: Object.values(dataset.entries),
+    borderColor: 'rgb(75, 192, 192)',
+    tension: 0.1
+  }));
+  
+  const labels = Object.keys(chartData[0].entries);
+  
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+});
+```
+</CodeGroup>
+
+## Performance Considerations
+
+<Warning>
+Chart endpoints may be slow for:
+- Large date ranges (> 1 year with daily granularity)
+- Many accounts/categories
+- Accounts with thousands of transactions
+
+Consider using appropriate period values (`1W`, `1M`) for large date ranges.
+</Warning>
+
+## Use Cases
+
+### Account Balance Tracking
+
+Visualize how your account balances change over time:
+
+<CodeGroup>
+```bash Daily Balance
+curl -X GET "https://your-firefly-instance.com/api/v1/chart/account/overview?start=2024-01-01&end=2024-01-31&accounts=1&period=1D" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Category Spending Trends
+
+Analyze spending patterns by category over months:
+
+<CodeGroup>
+```bash Monthly Categories
+curl -X GET "https://your-firefly-instance.com/api/v1/chart/category/overview?start=2024-01-01&end=2024-12-31&period=1M" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Budget Performance
+
+Track budget usage throughout the year:
+
+<CodeGroup>
+```bash Budget Tracking
+curl -X GET "https://your-firefly-instance.com/api/v1/chart/budget/overview?start=2024-01-01&end=2024-12-31&period=1M" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+## Date Formatting
+
+All dates in chart data are returned in ISO 8601 format with timezone:
+
+```
+2024-01-01T00:00:00+00:00
+```
+
+<Info>
+Dates are returned at the start of the period (midnight UTC) for daily data, start of week for weekly, etc.
+</Info>
+
+## Error Handling
+
+### Invalid Date Range
+
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "start": ["The start date must be before the end date."]
+  }
+}
+```
+
+### Invalid Account IDs
+
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "accounts": ["One or more account IDs are invalid."]
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Insights API" icon="lightbulb" href="/api/insights">
+    Get aggregated financial insights
+  </Card>
+  <Card title="Search API" icon="magnifying-glass" href="/api/search">
+    Search transactions for detailed analysis
+  </Card>
+</CardGroup>

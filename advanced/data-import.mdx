@@ -1,0 +1,415 @@
+---
+title: Data import
+description: Import financial data into Firefly III from various sources
+---
+
+Firefly III supports importing financial data from multiple sources, making it easy to migrate from other tools or sync with your bank accounts.
+
+## Import methods
+
+<CardGroup cols={2}>
+  <Card title="CSV import" icon="file-csv" href="#csv-import">
+    Import from bank exports and other applications
+  </Card>
+  <Card title="Data Importer" icon="download" href="#firefly-iii-data-importer">
+    Official tool for bank connections and automated imports
+  </Card>
+  <Card title="API import" icon="code" href="#api-import">
+    Programmatic import via REST API
+  </Card>
+  <Card title="Migration tools" icon="right-left" href="#migration-tools">
+    Migrate from other financial apps
+  </Card>
+</CardGroup>
+
+## CSV import
+
+The built-in CSV importer allows you to import transactions from CSV files exported by your bank or other financial software.
+
+### Preparing your CSV file
+
+Ensure your CSV file:
+- Has headers in the first row
+- Uses consistent date format
+- Includes at minimum: date, description, amount
+- Uses UTF-8 encoding
+
+<Tip>Most banks allow you to export transaction history as CSV from their online banking interface</Tip>
+
+### Import process
+
+<Steps>
+  <Step title="Navigate to import">
+    Go to **Transactions** > **Import data** in the main menu
+  </Step>
+  
+  <Step title="Upload CSV file">
+    Click **Import from file** and select your CSV file
+  </Step>
+  
+  <Step title="Configure columns">
+    Map CSV columns to Firefly III fields:
+    - Date
+    - Description
+    - Amount (or separate debit/credit columns)
+    - Account information
+    - Optional: category, budget, tags
+  </Step>
+  
+  <Step title="Set import options">
+    Configure:
+    - Date format
+    - Decimal separator
+    - Thousands separator
+    - Account to import into
+    - Duplicate detection
+  </Step>
+  
+  <Step title="Review and import">
+    Preview the transactions and click **Start import**
+  </Step>
+</Steps>
+
+### Column mapping
+
+Common CSV column mappings:
+
+| CSV Column | Firefly III Field | Required |
+|------------|-------------------|----------|
+| Date | Transaction date | Yes |
+| Description | Description | Yes |
+| Amount | Amount | Yes |
+| Account | Source/Destination | Recommended |
+| Category | Category | Optional |
+| Notes | Notes | Optional |
+| Reference | External ID | Optional |
+
+<Info>Save column mappings for reuse with future imports from the same source</Info>
+
+### Duplicate detection
+
+Firefly III can detect duplicate transactions based on:
+
+- **Date and amount**: Match on same date and amount
+- **Description**: Include description in matching
+- **External ID**: Match by unique transaction ID
+
+<Warning>Be cautious with duplicate detection on large imports. Review flagged duplicates before skipping them.</Warning>
+
+## Firefly III Data Importer
+
+The official [Data Importer](https://github.com/firefly-iii/data-importer) is a separate application that provides advanced import capabilities.
+
+### Features
+
+- **Bank connections**: Direct connection to banks via Nordigen or Salt Edge
+- **Automated imports**: Schedule regular imports
+- **Advanced mapping**: Sophisticated field mapping and transformation
+- **Rule application**: Apply rules during import
+- **CSV support**: Enhanced CSV import with configurations
+
+### Installation
+
+<Tabs>
+  <Tab title="Docker">
+    ```bash
+    version: '3.8'
+    services:
+      data-importer:
+        image: fireflyiii/data-importer:latest
+        environment:
+          - FIREFLY_III_URL=http://firefly:8080
+          - FIREFLY_III_ACCESS_TOKEN=your-token-here
+          - NORDIGEN_ID=your-nordigen-id
+          - NORDIGEN_KEY=your-nordigen-key
+        ports:
+          - "8081:8080"
+        depends_on:
+          - firefly
+    ```
+  </Tab>
+  
+  <Tab title="Self-hosted">
+    ```bash
+    # Clone repository
+    git clone https://github.com/firefly-iii/data-importer
+    cd data-importer
+
+    # Install dependencies
+    composer install --no-dev
+
+    # Configure
+    cp .env.example .env
+    # Edit .env with your settings
+
+    # Generate key
+    php artisan key:generate
+
+    # Set up web server
+    # Point to /public directory
+    ```
+  </Tab>
+</Tabs>
+
+### Bank connections
+
+Connect to banks using:
+
+<AccordionGroup>
+  <Accordion title="Nordigen (European banks)">
+    Free service for European bank connections:
+    
+    1. Register at [Nordigen](https://nordigen.com)
+    2. Get API credentials
+    3. Configure in Data Importer
+    4. Authorize bank connection
+    5. Import transactions automatically
+    
+    Supports 2000+ European banks
+  </Accordion>
+  
+  <Accordion title="Salt Edge (Global banks)">
+    Paid service for worldwide bank connections:
+    
+    1. Register at [Salt Edge](https://www.saltedge.com)
+    2. Get API credentials
+    3. Configure in Data Importer
+    4. Connect to your banks
+    5. Schedule automated imports
+    
+    Supports banks in 50+ countries
+  </Accordion>
+  
+  <Accordion title="Plaid (US/Canada)">
+    Currently requires third-party bridge tools:
+    
+    - Use community-built connectors
+    - Consider using CSV export from Plaid
+    - API integration possible with custom development
+  </Accordion>
+</AccordionGroup>
+
+### Automated imports
+
+Set up scheduled imports:
+
+```bash
+# Add to crontab
+0 2 * * * cd /path/to/data-importer && php artisan importer:auto-import >> /dev/null 2>&1
+```
+
+This will:
+- Run daily at 2 AM
+- Import from all configured connections
+- Apply rules automatically
+- Skip detected duplicates
+
+<Note>Automated imports require the Data Importer to have valid bank connection tokens</Note>
+
+## API import
+
+For custom integrations, use the Firefly III API:
+
+```bash
+curl -X POST "https://your-firefly.local/api/v1/transactions" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "transactions": [
+      {
+        "type": "withdrawal",
+        "date": "2024-01-01",
+        "amount": "50.00",
+        "description": "Groceries",
+        "source_name": "Checking Account",
+        "destination_name": "Supermarket",
+        "category_name": "Groceries",
+        "external_id": "bank-tx-123456"
+      }
+    ],
+    "apply_rules": true
+  }'
+```
+
+### Best practices for API import
+
+<AccordionGroup>
+  <Accordion title="Use external IDs">
+    Always include `external_id` to enable duplicate detection and prevent reimporting the same transactions.
+  </Accordion>
+  
+  <Accordion title="Apply rules">
+    Set `apply_rules: true` to automatically categorize and process imported transactions.
+  </Accordion>
+  
+  <Accordion title="Batch imports">
+    Import multiple transactions in a single request for better performance. Maximum 100 transactions per request.
+  </Accordion>
+  
+  <Accordion title="Error handling">
+    Check API responses for errors and implement retry logic for failed imports.
+  </Accordion>
+</AccordionGroup>
+
+## Migration tools
+
+Migrate from other financial management applications:
+
+### From YNAB
+
+Use the YNAB to Firefly III converter:
+
+```bash
+# Install converter tool
+git clone https://github.com/firefly-iii/ynab-tools
+cd ynab-tools
+
+# Export from YNAB
+# Download your YNAB data as JSON
+
+# Convert and import
+python ynab-to-firefly.py --ynab-file export.json --firefly-url https://your-firefly.local --token YOUR_TOKEN
+```
+
+### From GnuCash
+
+Export from GnuCash as CSV:
+
+1. In GnuCash: **File** > **Export** > **Export Transactions to CSV**
+2. Import CSV into Firefly III using CSV importer
+3. Map accounts and categories manually
+
+### From Mint
+
+1. Export all transactions from Mint as CSV
+2. Prepare CSV file (Mint format is well-supported)
+3. Use CSV importer in Firefly III
+4. Map Mint categories to Firefly III categories
+
+### From other Firefly III instance
+
+```bash
+# Export from source instance
+php artisan firefly-iii:export-data --export-accounts --export-transactions --export-budgets
+
+# Import to destination using Data Importer
+# Configure source Firefly III in Data Importer
+# Run import process
+```
+
+## Import configuration
+
+### Rules during import
+
+Apply rules automatically:
+
+1. Create rules for import processing
+2. Group rules in "Import" rule group
+3. Set rule group to run on import
+4. Enable "Apply rules" during import
+
+<Tip>Create specific rules for cleaning up imported data, such as fixing descriptions or setting default categories</Tip>
+
+### Account mapping
+
+For imports with multiple accounts:
+
+- **Use IBAN/Account numbers**: Map by account identifier when available
+- **Create accounts automatically**: Let Firefly III create missing accounts
+- **Manual mapping**: Specify source and destination accounts explicitly
+
+### Currency handling
+
+When importing multi-currency transactions:
+
+- Ensure currency codes in CSV match Firefly III currency codes
+- Enable the required currencies before import
+- Set up exchange rates for accurate conversion
+
+## Troubleshooting
+
+<Accordion title="Import fails with date errors">
+  **Problem**: Date format not recognized
+  
+  **Solutions**:
+  - Check date format matches configuration
+  - Common formats: `Y-m-d`, `d/m/Y`, `m/d/Y`
+  - Ensure consistent date format throughout CSV
+  - Try different date format settings
+</Accordion>
+
+<Accordion title="Duplicate transactions">
+  **Problem**: Same transactions imported multiple times
+  
+  **Solutions**:
+  - Enable duplicate detection
+  - Use external IDs from bank
+  - Check date/amount matching threshold
+  - Review and remove duplicates manually if needed
+</Accordion>
+
+<Accordion title="Missing accounts">
+  **Problem**: Accounts not created or mapped correctly
+  
+  **Solutions**:
+  - Enable automatic account creation
+  - Create accounts manually before import
+  - Check account name matching is working
+  - Verify account types are correct
+</Accordion>
+
+<Accordion title="Bank connection fails">
+  **Problem**: Can't connect to bank via Data Importer
+  
+  **Solutions**:
+  - Verify API credentials are correct
+  - Check bank is supported by provider
+  - Reauthorize bank connection
+  - Check Data Importer logs for errors
+  - Ensure 2FA/authorization is completed
+</Accordion>
+
+## Best practices
+
+<AccordionGroup>
+  <Accordion title="Start with small imports">
+    Test import process with a small CSV file (10-20 transactions) before importing years of data.
+  </Accordion>
+  
+  <Accordion title="Backup before importing">
+    Always backup your database before large imports in case you need to rollback.
+  </Accordion>
+  
+  <Accordion title="Review after import">
+    Check imported transactions for:
+    - Correct accounts
+    - Proper categorization
+    - Accurate amounts
+    - No duplicates
+  </Accordion>
+  
+  <Accordion title="Save import configurations">
+    Save column mappings and settings for recurring imports from the same source.
+  </Accordion>
+  
+  <Accordion title="Use external IDs">
+    Always use bank transaction IDs as external IDs for reliable duplicate detection.
+  </Accordion>
+</AccordionGroup>
+
+## Related documentation
+
+<CardGroup cols={2}>
+  <Card title="Rules" icon="gears" href="/features/rules">
+    Process imported transactions automatically
+  </Card>
+  <Card title="Transactions" icon="receipt" href="/features/transactions">
+    Understand transaction structure
+  </Card>
+  <Card title="API" icon="code" href="/api/transactions">
+    Programmatic transaction import
+  </Card>
+  <Card title="Data export" icon="upload" href="/advanced/data-export">
+    Export your Firefly III data
+  </Card>
+</CardGroup>

@@ -1,0 +1,480 @@
+---
+title: Data Operations API
+description: Bulk operations, data export, and data management endpoints
+---
+
+The Data Operations API provides endpoints for bulk modifications, data export, and data management operations.
+
+## Overview
+
+Data operation endpoints enable:
+- **Bulk Updates** - Modify multiple transactions at once
+- **Data Export** - Export various data types to CSV
+- **Data Destruction** - Delete all user data
+- **Data Purge** - Purge all data except configuration
+- **Batch Processing** - Handle batch API requests
+
+<Warning>
+Data destruction and purge operations are irreversible. Use with extreme caution.
+</Warning>
+
+## Bulk Operations
+
+Perform bulk updates on transactions based on query criteria.
+
+### Base Path
+```
+/api/v1/data/bulk
+```
+
+### Bulk Update Transactions
+
+Update multiple transactions by moving them between accounts.
+
+<CodeGroup>
+```bash Move Transactions
+curl -X POST "https://your-firefly-instance.com/api/v1/data/bulk/transactions" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": {
+      "where": {
+        "account_id": "5"
+      },
+      "update": {
+        "account_id": "8"
+      }
+    }
+  }'
+```
+</CodeGroup>
+
+<ParamField body="query.where.account_id" type="string" required>
+  Source account ID (transactions to move FROM this account)
+</ParamField>
+
+<ParamField body="query.update.account_id" type="string" required>
+  Destination account ID (transactions to move TO this account)
+</ParamField>
+
+<Note>
+This endpoint moves all transactions from one account to another. This is useful when closing or consolidating accounts.
+</Note>
+
+<Info>
+The bulk transaction endpoint requires the `MANAGE_TRANSACTIONS` role permission.
+</Info>
+
+### Response
+
+Returns `204 No Content` on success.
+
+## Data Export
+
+Export various data types to CSV format for backup or analysis.
+
+### Base Path
+```
+/api/v1/data/export
+```
+
+### Export Accounts
+
+Export all accounts to CSV.
+
+<CodeGroup>
+```bash Export Accounts
+curl -X GET "https://your-firefly-instance.com/api/v1/data/export/accounts" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -o accounts-export.csv
+```
+</CodeGroup>
+
+Returns a CSV file with account data.
+
+### Export Bills
+
+Export all bills/subscriptions to CSV.
+
+<CodeGroup>
+```bash Export Bills
+curl -X GET "https://your-firefly-instance.com/api/v1/data/export/bills" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -o bills-export.csv
+```
+</CodeGroup>
+
+### Export Budgets
+
+Export all budgets to CSV.
+
+<CodeGroup>
+```bash Export Budgets
+curl -X GET "https://your-firefly-instance.com/api/v1/data/export/budgets" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -o budgets-export.csv
+```
+</CodeGroup>
+
+### Export Categories
+
+Export all categories to CSV.
+
+<CodeGroup>
+```bash Export Categories
+curl -X GET "https://your-firefly-instance.com/api/v1/data/export/categories" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -o categories-export.csv
+```
+</CodeGroup>
+
+### Export Piggy Banks
+
+Export all piggy banks to CSV.
+
+<CodeGroup>
+```bash Export Piggy Banks
+curl -X GET "https://your-firefly-instance.com/api/v1/data/export/piggy-banks" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -o piggies-export.csv
+```
+</CodeGroup>
+
+### Export Recurring Transactions
+
+Export all recurring transactions to CSV.
+
+<CodeGroup>
+```bash Export Recurring
+curl -X GET "https://your-firefly-instance.com/api/v1/data/export/recurring" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -o recurring-export.csv
+```
+</CodeGroup>
+
+### Export Rules
+
+Export all rules to CSV.
+
+<CodeGroup>
+```bash Export Rules
+curl -X GET "https://your-firefly-instance.com/api/v1/data/export/rules" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -o rules-export.csv
+```
+</CodeGroup>
+
+### Export Tags
+
+Export all tags to CSV.
+
+<CodeGroup>
+```bash Export Tags
+curl -X GET "https://your-firefly-instance.com/api/v1/data/export/tags" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -o tags-export.csv
+```
+</CodeGroup>
+
+### Export Transactions
+
+Export transactions within a date range to CSV.
+
+<CodeGroup>
+```bash Export Transactions
+curl -X GET "https://your-firefly-instance.com/api/v1/data/export/transactions?start=2024-01-01&end=2024-12-31&accounts=1,2,3" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -o transactions-export.csv
+```
+</CodeGroup>
+
+<ParamField query="start" type="date" required>
+  Start date for transaction export (format: `YYYY-MM-DD`)
+</ParamField>
+
+<ParamField query="end" type="date" required>
+  End date for transaction export (format: `YYYY-MM-DD`)
+</ParamField>
+
+<ParamField query="accounts" type="string">
+  Comma-separated list of account IDs to export. If omitted, exports all accounts.
+</ParamField>
+
+### Export Response Format
+
+All export endpoints return:
+- **Content-Type**: `application/octet-stream`
+- **Content-Disposition**: `attachment; filename=YYYY-MM-DD-HH-MM-SS-export-{type}.csv`
+- **Body**: CSV formatted data
+
+<Info>
+Export endpoints require the `READ_ONLY` role permission or higher.
+</Info>
+
+## Data Destruction
+
+Permanently delete user data.
+
+### Base Path
+```
+/api/v1/data/destroy
+```
+
+### Destroy All Data
+
+Delete all user data while preserving the account.
+
+<CodeGroup>
+```bash Destroy Data
+curl -X DELETE "https://your-firefly-instance.com/api/v1/data/destroy" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+<Warning>
+**This operation is IRREVERSIBLE!** All transactions, accounts, budgets, bills, categories, tags, rules, and other financial data will be permanently deleted.
+</Warning>
+
+Returns `204 No Content` on success.
+
+### What Gets Deleted
+
+- All transactions (withdrawals, deposits, transfers)
+- All accounts (asset, expense, revenue)
+- All budgets and budget limits
+- All bills and subscriptions
+- All categories
+- All tags
+- All piggy banks
+- All rules and rule groups
+- All recurring transactions
+- All attachments
+
+### What Gets Preserved
+
+- User account and authentication
+- User preferences
+- OAuth clients and tokens
+- System configuration
+
+## Data Purge
+
+Completely purge all data including configuration.
+
+### Base Path
+```
+/api/v1/data/purge
+```
+
+### Purge All Data
+
+Delete all user data AND reset preferences to defaults.
+
+<CodeGroup>
+```bash Purge Data
+curl -X DELETE "https://your-firefly-instance.com/api/v1/data/purge" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+<Warning>
+**EXTREME CAUTION!** This deletes everything from destroy operation PLUS user preferences and settings. Only the user account remains.
+</Warning>
+
+Returns `204 No Content` on success.
+
+### Purge vs Destroy
+
+| Operation | Destroy | Purge |
+|-----------|---------|-------|
+| Transactions | ✓ Deleted | ✓ Deleted |
+| Accounts | ✓ Deleted | ✓ Deleted |
+| Budgets/Bills/Categories | ✓ Deleted | ✓ Deleted |
+| User Preferences | Preserved | ✓ Deleted |
+| OAuth Tokens | Preserved | ✓ Deleted |
+| User Account | Preserved | Preserved |
+
+## Batch API Endpoints
+
+Handle batch API request processing.
+
+### Base Path
+```
+/api/v1/batch
+```
+
+### Finish Batch Processing
+
+Signal completion of a batch operation.
+
+<CodeGroup>
+```bash Finish Batch
+curl -X POST "https://your-firefly-instance.com/api/v1/batch/finish" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+<Info>
+This endpoint is used internally by batch processing systems. Refer to Firefly III documentation for batch API usage.
+</Info>
+
+## Export Use Cases
+
+### Full Data Backup
+
+Export all data types for complete backup:
+
+<CodeGroup>
+```bash Full Backup Script
+#!/bin/bash
+
+BASE_URL="https://your-firefly-instance.com/api/v1/data/export"
+TOKEN="YOUR_ACCESS_TOKEN"
+DATE=$(date +%Y-%m-%d)
+
+# Export all data types
+for TYPE in accounts bills budgets categories piggy-banks recurring rules tags; do
+  curl -X GET "${BASE_URL}/${TYPE}" \
+    -H "Authorization: Bearer ${TOKEN}" \
+    -o "${DATE}-${TYPE}.csv"
+done
+
+# Export transactions for current year
+curl -X GET "${BASE_URL}/transactions?start=2024-01-01&end=2024-12-31" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -o "${DATE}-transactions.csv"
+```
+</CodeGroup>
+
+### Monthly Transaction Export
+
+Export transactions for a specific month:
+
+<CodeGroup>
+```bash Monthly Export
+curl -X GET "https://your-firefly-instance.com/api/v1/data/export/transactions?start=2024-11-01&end=2024-11-30" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -o 2024-11-transactions.csv
+```
+</CodeGroup>
+
+### Account Consolidation
+
+Move all transactions when closing an account:
+
+<CodeGroup>
+```bash Consolidate Account
+curl -X POST "https://your-firefly-instance.com/api/v1/data/bulk/transactions" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": {
+      "where": {"account_id": "5"},
+      "update": {"account_id": "1"}
+    }
+  }'
+```
+</CodeGroup>
+
+## Security Considerations
+
+<Warning>
+**Bulk operations and data deletion require appropriate permissions:**
+- Bulk updates: `MANAGE_TRANSACTIONS` role
+- Data export: `READ_ONLY` role or higher
+- Data destroy/purge: Account owner only
+</Warning>
+
+### Pre-Deletion Checklist
+
+Before using destroy or purge:
+
+1. ✓ Export all data for backup
+2. ✓ Verify exports are complete and valid
+3. ✓ Confirm you want to delete everything
+4. ✓ Understand the operation is irreversible
+5. ✓ Consider using destroy before purge
+
+## Rate Limiting
+
+Export operations may take time for large datasets:
+- Transaction exports: 10-60 seconds for 1000s of transactions
+- Other exports: Usually < 5 seconds
+
+<Info>
+Export endpoints don't have pagination - they return complete datasets.
+</Info>
+
+## CSV Format
+
+Exported CSV files include:
+- Header row with column names
+- UTF-8 encoding
+- Comma-separated values
+- Quoted strings where necessary
+- Date format: `YYYY-MM-DD`
+
+## Error Handling
+
+### Missing Parameters
+
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "start": ["The start field is required."]
+  }
+}
+```
+
+### Invalid Account ID
+
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "account_id": ["The selected account id is invalid."]
+  }
+}
+```
+
+### Insufficient Permissions
+
+```json
+{
+  "message": "This action is unauthorized."
+}
+```
+
+## Limitations
+
+- Bulk operations currently only support account-to-account transaction moves
+- No partial restore from exports (must use web interface or manual import)
+- CSV exports are one-way (export only, no import via API)
+- Destroy/purge operations affect only current user's data
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Webhooks API" icon="webhook" href="/api/webhooks">
+    Configure real-time event notifications
+  </Card>
+  <Card title="Search API" icon="magnifying-glass" href="/api/search">
+    Search and filter data
+  </Card>
+</CardGroup>

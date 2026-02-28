@@ -1,0 +1,460 @@
+---
+title: "Bills"
+description: "Track and manage recurring bills and subscriptions"
+---
+
+## Overview
+
+Bills help you track recurring expenses like rent, utilities, subscriptions, and insurance. Firefly III monitors when bills are paid, alerts you to missed payments, and helps you predict upcoming expenses.
+
+## What Are Bills?
+
+Bills are expected recurring expenses with:
+- A predictable schedule (weekly, monthly, yearly)
+- A consistent payee (same company or person)
+- An amount range (minimum and maximum)
+
+<CardGroup cols={2}>
+  <Card title="Fixed Bills" icon="file-invoice-dollar">
+    Same amount every period
+    - Rent: $1,200/month
+    - Subscription: $9.99/month
+    - Car payment: $350/month
+  </Card>
+  
+  <Card title="Variable Bills" icon="chart-line">
+    Varying amounts within a range
+    - Electricity: $50-$150/month
+    - Water: $30-$80/month
+    - Credit card: $100-$500/month
+  </Card>
+</CardGroup>
+
+## Creating a Bill
+
+<Steps>
+  <Step title="Navigate to Bills">
+    Go to **Bills** in the main navigation.
+  </Step>
+  
+  <Step title="Create New Bill">
+    Click **Create New Bill**.
+  </Step>
+  
+  <Step title="Enter Bill Details">
+    Fill in the basic information:
+    - **Name**: Descriptive name ("Rent", "Netflix Subscription")
+    - **Amount Range**: Minimum and maximum amounts
+    - **Currency**: The currency of the bill
+  </Step>
+  
+  <Step title="Set Schedule">
+    Define when the bill repeats:
+    - **Frequency**: Weekly, monthly, quarterly, yearly
+    - **Skip**: How many periods to skip (usually 0)
+    - **Date**: Day of month or week when bill is due
+  </Step>
+  
+  <Step title="Configure Matching">
+    Set up automatic bill matching:
+    - **Match Pattern**: Words to find in transaction descriptions
+    - **Auto-match**: Enable automatic bill assignment
+  </Step>
+  
+  <Step title="Add Optional Details">
+    - **End Date**: When the bill stops (for limited contracts)
+    - **Extension Date**: When contract renews
+    - **Notes**: Any relevant information
+  </Step>
+  
+  <Step title="Save">
+    Click **Save** to create your bill.
+  </Step>
+</Steps>
+
+## Bill Matching
+
+Firefly III can automatically match transactions to bills:
+
+### Match Patterns
+
+Define keywords that identify the bill:
+- **Landlord name**: "Smith Properties"
+- **Company name**: "Netflix"
+- **Account number**: "Account #12345"
+- **Multiple patterns**: "Electric Company,Power Co,Utility Bill"
+
+<Tip>
+Use commas to separate multiple match patterns. Firefly III will match transactions containing any of the patterns.
+</Tip>
+
+### Auto-Match
+
+When enabled:
+- Firefly III automatically scans new transactions
+- Matches transactions to bills based on patterns
+- Links matching transactions to the bill
+- Marks the bill as paid for that period
+
+<Accordion title="Manual Matching">
+  You can also manually match transactions to bills:
+  1. Open the transaction
+  2. Click **Edit**
+  3. Select the bill from the dropdown
+  4. Save the transaction
+</Accordion>
+
+## Bill Dashboard
+
+The Bills overview shows your bill status:
+
+### Bill Status Indicators
+
+- **Paid** (Green): Bill paid on time this period
+- **Unpaid** (Yellow): Bill not yet paid but not overdue
+- **Overdue** (Red): Bill payment missed
+
+### Upcoming Bills
+
+See bills due soon:
+- Next 7 days
+- Next 30 days
+- This month
+
+### Bill History
+
+View payment history:
+- Payment dates
+- Amounts paid
+- Late payments
+- Missed bills
+
+## Bill Details Page
+
+Each bill has a detailed view showing:
+
+### Overview
+- Total paid this year
+- Average payment amount
+- Last payment date
+- Next expected payment
+
+### Payment History
+Chronological list of all payments:
+- Date paid
+- Amount
+- Associated transaction
+- Days early/late
+
+### Charts
+Visual representation of:
+- Payment amounts over time
+- Spending trends
+- Seasonal variations
+
+## Managing Bills
+
+### Editing Bills
+
+<Steps>
+  <Step title="Open Bill">
+    Click on the bill from the bills list.
+  </Step>
+  
+  <Step title="Click Edit">
+    Select **Edit** from the bill details page.
+  </Step>
+  
+  <Step title="Make Changes">
+    Update any fields as needed.
+  </Step>
+  
+  <Step title="Save">
+    Click **Save** to apply changes.
+  </Step>
+</Steps>
+
+<Note>
+Changing bill amounts or dates doesn't affect past matched transactions, only future matching.
+</Note>
+
+### Deactivating Bills
+
+For bills you no longer pay:
+1. Edit the bill
+2. Set **Active** to "No"
+3. Save the bill
+
+Inactive bills:
+- Don't show in upcoming bills list
+- Preserve historical payment data
+- Can be reactivated later
+
+### Deleting Bills
+
+<Warning>
+Deleting a bill removes all bill data but doesn't delete the associated transactions. Use deactivation instead if you want to preserve history.
+</Warning>
+
+## Bill Amount Ranges
+
+### Fixed Amount Bills
+
+For bills with the same amount every time:
+- Minimum: $100
+- Maximum: $100
+
+Firefly III only matches transactions of exactly $100.
+
+### Variable Amount Bills
+
+For bills that fluctuate:
+- Minimum: $50
+- Maximum: $150
+
+Firefly III matches transactions between $50 and $150.
+
+<Tip>
+Set a reasonable range. Too wide and you'll get false matches; too narrow and you might miss legitimate payments.
+</Tip>
+
+## Bill Schedules
+
+### Common Frequencies
+
+- **Monthly**: Most bills (rent, subscriptions)
+- **Quarterly**: Some utilities or insurance
+- **Yearly**: Annual subscriptions, insurance premiums
+- **Weekly**: Some gym memberships
+
+### The Skip Feature
+
+<Accordion title="What does 'skip' mean?">
+  Skip determines how many periods to skip between bills:
+  - Skip 0: Every period (monthly bill occurs every month)
+  - Skip 1: Every other period (monthly bill occurs every 2 months)
+  - Skip 2: Every third period (monthly bill occurs every 3 months)
+  
+  Most bills have skip set to 0.
+</Accordion>
+
+### Bill Dates
+
+Set when the bill is due:
+- **Day of month**: "15" for the 15th of each month
+- **Last day**: "Last day of month" for month-end bills
+- **Specific date**: For yearly bills
+
+## Bill Notifications
+
+### Overdue Alerts
+
+Get notified when bills aren't paid:
+- Red indicator on bills page
+- Overdue bill count in dashboard
+
+### Upcoming Reminders
+
+See bills coming due:
+- Yellow indicator for unpaid bills
+- Upcoming bills widget
+- Dashboard notifications
+
+## Best Practices
+
+<Accordion title="Create Bills for Regular Expenses Only">
+  Only create bills for truly recurring, predictable expenses. Don't create bills for:
+  - One-time purchases
+  - Irregular expenses
+  - Variable expenses without a pattern
+</Accordion>
+
+<Accordion title="Set Realistic Amount Ranges">
+  Look at 3-6 months of payment history to determine:
+  - Lowest typical amount (minimum)
+  - Highest typical amount (maximum)
+  
+  Add a small buffer (±10%) to avoid missing matches.
+</Accordion>
+
+<Accordion title="Use Specific Match Patterns">
+  Make match patterns specific enough to avoid false matches:
+  - Good: "Netflix Subscription", "Account #123456"
+  - Too broad: "Payment", "Monthly"
+</Accordion>
+
+<Accordion title="Review Bills Monthly">
+  Check your bills page each month to:
+  - Verify all bills were matched correctly
+  - Catch missed payments
+  - Update amounts if they've changed
+</Accordion>
+
+<Accordion title="Set End Dates for Temporary Bills">
+  For bills with a known end:
+  - Limited-term subscriptions
+  - Promotional pricing periods
+  - Loan payments with a payoff date
+  
+  This helps with long-term planning.
+</Accordion>
+
+## Common Bill Types
+
+### Housing
+- Rent/Mortgage (fixed monthly)
+- Property tax (yearly or quarterly)
+- HOA fees (monthly or quarterly)
+
+### Utilities
+- Electricity (variable monthly)
+- Water (variable monthly)
+- Gas (variable monthly)
+- Internet (fixed monthly)
+- Phone (fixed monthly)
+
+### Subscriptions
+- Streaming services (fixed monthly/yearly)
+- Software subscriptions (fixed monthly/yearly)
+- Gym membership (fixed monthly)
+- Magazine subscriptions (fixed yearly)
+
+### Insurance
+- Health insurance (fixed monthly)
+- Auto insurance (fixed monthly or semi-annually)
+- Home/Renters insurance (fixed yearly)
+- Life insurance (fixed monthly/yearly)
+
+### Loans
+- Car payment (fixed monthly)
+- Student loans (fixed monthly)
+- Personal loans (fixed monthly)
+
+## Bills vs. Recurring Transactions
+
+<CardGroup cols={2}>
+  <Card title="Bills" icon="file-invoice">
+    **For tracking expected expenses**
+    - Monitors if payment was made
+    - Matches existing transactions
+    - Alerts to missed payments
+    - Doesn't create transactions
+  </Card>
+  
+  <Card title="Recurring Transactions" icon="rotate">
+    **For automating transaction entry**
+    - Creates new transactions automatically
+    - Generates on schedule
+    - Reduces manual entry
+    - Can include bills
+  </Card>
+</CardGroup>
+
+<Tip>
+Use both together! Create a recurring transaction to auto-enter rent, and create a bill to verify it was actually paid.
+</Tip>
+
+## Bill Reports
+
+### Payment Summary
+View total bill payments:
+- By time period
+- By bill category
+- Paid vs. unpaid
+
+### Cost Trends
+Analyze how bill costs change:
+- Month-over-month comparison
+- Yearly trends
+- Seasonal patterns
+
+### Budget Impact
+See how bills affect budgets:
+- Bills by budget category
+- Budget consumption by bills
+- Remaining budget after bills
+
+## Integration with Other Features
+
+### With Recurring Transactions
+Automate bill payment entry:
+1. Create a recurring transaction for the bill
+2. Create a bill to verify payment
+3. Both work together for complete tracking
+
+### With Budgets
+Plan for bill payments:
+- Assign bills to relevant budgets
+- Ensure budget limits cover bill amounts
+- Track fixed vs. variable costs
+
+### With Categories
+Classify bill expenses:
+- Tag bills with appropriate categories
+- Analyze spending by bill type
+- Group similar bills
+
+## Troubleshooting
+
+<Accordion title="Bill not matching transactions">
+  Check:
+  - Match pattern includes keywords from transaction description
+  - Amount is within the min/max range
+  - Auto-match is enabled
+  - Transaction date is within the bill period
+  - Currency matches
+</Accordion>
+
+<Accordion title="Bill showing as overdue incorrectly">
+  Verify:
+  - Transaction was matched to the bill
+  - Transaction date is within the expected period
+  - Manual matching if auto-match failed
+  - Bill schedule is set correctly
+</Accordion>
+
+<Accordion title="Wrong transaction matched to bill">
+  To fix:
+  - Open the incorrect transaction
+  - Edit and remove the bill assignment
+  - Find the correct transaction and assign it
+  - Adjust match pattern to prevent future errors
+</Accordion>
+
+<Accordion title="Bill amount needs updating">
+  When bill amounts change:
+  - Edit the bill
+  - Update min/max amounts
+  - Previous transactions remain unchanged
+  - Future matching uses new amounts
+</Accordion>
+
+## Advanced Features
+
+### Extension Dates
+
+Track when promotional pricing ends:
+- Set extension date to when price increases
+- Get a reminder before the change
+- Plan budget adjustments
+
+### Object Groups
+
+Organize related bills:
+- Group all utility bills
+- Combine subscription services
+- Organize by budget category
+
+### Notes and Attachments
+
+Store bill information:
+- Add account numbers in notes
+- Attach contract documents
+- Save payment confirmation emails
+
+## Related Features
+
+- [Transactions](/features/transactions) - Bills match to transactions
+- [Recurring Transactions](/features/recurring-transactions) - Automate bill payment entry
+- [Budgets](/features/budgets) - Plan for bill payments
+- [Rules](/features/rules) - Automatically categorize bill payments

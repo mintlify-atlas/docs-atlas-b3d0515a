@@ -1,0 +1,442 @@
+---
+title: Docker Installation
+description: Install Firefly III using Docker containers
+---
+
+Firefly III is available as a Docker image, making it easy to deploy and manage. This guide covers installation using Docker and Docker Compose.
+
+## Prerequisites
+
+- Docker Engine 20.10 or higher
+- Docker Compose v2.0 or higher (optional, but recommended)
+- At least 512MB of available RAM
+- Database: MySQL 8.0+, PostgreSQL 13+, or SQLite
+
+## Quick Start with Docker Run
+
+<Steps>
+  <Step title="Create a Docker network">
+    Create a dedicated network for Firefly III and its database:
+    
+    ```bash
+    docker network create firefly-net
+    ```
+  </Step>
+
+  <Step title="Start the database container">
+    <Tabs>
+      <Tab title="MySQL/MariaDB">
+        ```bash
+        docker run -d \
+          --name firefly-db \
+          --network firefly-net \
+          -e MYSQL_ROOT_PASSWORD=root_password \
+          -e MYSQL_DATABASE=firefly \
+          -e MYSQL_USER=firefly \
+          -e MYSQL_PASSWORD=secret_firefly_password \
+          -v firefly_db:/var/lib/mysql \
+          mariadb:latest
+        ```
+      </Tab>
+      
+      <Tab title="PostgreSQL">
+        ```bash
+        docker run -d \
+          --name firefly-db \
+          --network firefly-net \
+          -e POSTGRES_DB=firefly \
+          -e POSTGRES_USER=firefly \
+          -e POSTGRES_PASSWORD=secret_firefly_password \
+          -v firefly_db:/var/lib/postgresql/data \
+          postgres:15
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Generate an application key">
+    Generate a random 32-character string for your APP_KEY:
+    
+    ```bash
+    head /dev/urandom | LC_ALL=C tr -dc 'A-Za-z0-9' | head -c 32 && echo
+    ```
+    
+    Save this key for the next step.
+  </Step>
+
+  <Step title="Start Firefly III container">
+    ```bash
+    docker run -d \
+      --name firefly-app \
+      --network firefly-net \
+      -p 8080:8080 \
+      -e APP_KEY=SomeRandomStringOf32CharsExactly \
+      -e APP_URL=http://localhost:8080 \
+      -e DB_CONNECTION=mysql \
+      -e DB_HOST=firefly-db \
+      -e DB_PORT=3306 \
+      -e DB_DATABASE=firefly \
+      -e DB_USERNAME=firefly \
+      -e DB_PASSWORD=secret_firefly_password \
+      -e TZ=Europe/Amsterdam \
+      -v firefly_upload:/var/www/html/storage/upload \
+      fireflyiii/core:latest
+    ```
+    
+    <Note>
+      Replace `SomeRandomStringOf32CharsExactly` with the key you generated in the previous step.
+    </Note>
+  </Step>
+
+  <Step title="Access Firefly III">
+    Open your browser and navigate to `http://localhost:8080`. You'll be prompted to create your first user account.
+  </Step>
+</Steps>
+
+## Docker Compose Installation (Recommended)
+
+Docker Compose simplifies multi-container deployments and makes configuration management easier.
+
+<Steps>
+  <Step title="Create a docker-compose.yml file">
+    Create a new directory for Firefly III and add a `docker-compose.yml` file:
+    
+    <CodeGroup>
+      ```yaml docker-compose.yml (MySQL)
+      version: '3.8'
+      
+      services:
+        app:
+          image: fireflyiii/core:latest
+          container_name: firefly-app
+          restart: unless-stopped
+          ports:
+            - "8080:8080"
+          environment:
+            - APP_ENV=production
+            - APP_DEBUG=false
+            - APP_KEY=SomeRandomStringOf32CharsExactly
+            - APP_URL=http://localhost:8080
+            - SITE_OWNER=mail@example.com
+            - DB_CONNECTION=mysql
+            - DB_HOST=db
+            - DB_PORT=3306
+            - DB_DATABASE=firefly
+            - DB_USERNAME=firefly
+            - DB_PASSWORD=secret_firefly_password
+            - TZ=Europe/Amsterdam
+            - TRUSTED_PROXIES=**
+            - LOG_CHANNEL=stack
+            - APP_LOG_LEVEL=notice
+            - AUDIT_LOG_LEVEL=emergency
+          volumes:
+            - firefly_upload:/var/www/html/storage/upload
+          depends_on:
+            - db
+      
+        db:
+          image: mariadb:latest
+          container_name: firefly-db
+          restart: unless-stopped
+          environment:
+            - MYSQL_ROOT_PASSWORD=root_password
+            - MYSQL_DATABASE=firefly
+            - MYSQL_USER=firefly
+            - MYSQL_PASSWORD=secret_firefly_password
+          volumes:
+            - firefly_db:/var/lib/mysql
+      
+      volumes:
+        firefly_upload:
+        firefly_db:
+      ```
+      
+      ```yaml docker-compose.yml (PostgreSQL)
+      version: '3.8'
+      
+      services:
+        app:
+          image: fireflyiii/core:latest
+          container_name: firefly-app
+          restart: unless-stopped
+          ports:
+            - "8080:8080"
+          environment:
+            - APP_ENV=production
+            - APP_DEBUG=false
+            - APP_KEY=SomeRandomStringOf32CharsExactly
+            - APP_URL=http://localhost:8080
+            - SITE_OWNER=mail@example.com
+            - DB_CONNECTION=pgsql
+            - DB_HOST=db
+            - DB_PORT=5432
+            - DB_DATABASE=firefly
+            - DB_USERNAME=firefly
+            - DB_PASSWORD=secret_firefly_password
+            - PGSQL_SCHEMA=public
+            - TZ=Europe/Amsterdam
+            - TRUSTED_PROXIES=**
+            - LOG_CHANNEL=stack
+            - APP_LOG_LEVEL=notice
+            - AUDIT_LOG_LEVEL=emergency
+          volumes:
+            - firefly_upload:/var/www/html/storage/upload
+          depends_on:
+            - db
+      
+        db:
+          image: postgres:15
+          container_name: firefly-db
+          restart: unless-stopped
+          environment:
+            - POSTGRES_DB=firefly
+            - POSTGRES_USER=firefly
+            - POSTGRES_PASSWORD=secret_firefly_password
+          volumes:
+            - firefly_db:/var/lib/postgresql/data
+      
+      volumes:
+        firefly_upload:
+        firefly_db:
+      ```
+    </CodeGroup>
+    
+    <Warning>
+      Remember to change `APP_KEY`, `SITE_OWNER`, and all passwords before deploying to production!
+    </Warning>
+  </Step>
+
+  <Step title="Generate your APP_KEY">
+    Use one of these methods to generate a secure 32-character key:
+    
+    ```bash
+    # Linux/macOS
+    head /dev/urandom | LC_ALL=C tr -dc 'A-Za-z0-9' | head -c 32 && echo
+    
+    # Or use OpenSSL
+    openssl rand -base64 32
+    
+    # Or visit
+    # https://www.random.org/strings/?num=5&len=32&digits=on&upperalpha=on&loweralpha=on&unique=on&format=html&rnd=new
+    ```
+    
+    Update the `APP_KEY` value in your `docker-compose.yml` file.
+  </Step>
+
+  <Step title="Start the containers">
+    ```bash
+    docker compose up -d
+    ```
+    
+    This will:
+    - Pull the required Docker images
+    - Create the database
+    - Start both containers
+    - Run database migrations automatically
+  </Step>
+
+  <Step title="Check the logs">
+    Monitor the startup process:
+    
+    ```bash
+    docker compose logs -f app
+    ```
+    
+    Wait until you see messages indicating the application is ready.
+  </Step>
+
+  <Step title="Access Firefly III">
+    Navigate to `http://localhost:8080` and create your first user account.
+  </Step>
+</Steps>
+
+## Using Docker Secrets
+
+For enhanced security, you can use Docker secrets or environment files for sensitive data:
+
+```yaml docker-compose.yml
+services:
+  app:
+    image: fireflyiii/core:latest
+    environment:
+      - APP_KEY_FILE=/run/secrets/firefly_app_key
+      - DB_PASSWORD_FILE=/run/secrets/firefly_db_password
+      - SITE_OWNER_FILE=/run/secrets/firefly_site_owner
+    secrets:
+      - firefly_app_key
+      - firefly_db_password
+      - firefly_site_owner
+
+secrets:
+  firefly_app_key:
+    file: ./secrets/app_key.txt
+  firefly_db_password:
+    file: ./secrets/db_password.txt
+  firefly_site_owner:
+    file: ./secrets/site_owner.txt
+```
+
+<Note>
+Many environment variables support a `_FILE` suffix. Check the [configuration reference](/installation/configuration) for details.
+</Note>
+
+## Reverse Proxy Configuration
+
+If you're running Firefly III behind a reverse proxy (nginx, Traefik, Caddy), you need to:
+
+1. Set `TRUSTED_PROXIES=**` in your environment variables
+2. Ensure your proxy passes the correct headers
+3. Update `APP_URL` to match your external URL
+
+### Nginx Example
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name firefly.example.com;
+    
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+    }
+}
+```
+
+### Traefik Example
+
+```yaml docker-compose.yml
+services:
+  app:
+    image: fireflyiii/core:latest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.firefly.rule=Host(`firefly.example.com`)"
+      - "traefik.http.routers.firefly.entrypoints=websecure"
+      - "traefik.http.routers.firefly.tls.certresolver=myresolver"
+      - "traefik.http.services.firefly.loadbalancer.server.port=8080"
+```
+
+## Cron Jobs
+
+Firefly III requires a daily cron job for recurring transactions and other maintenance tasks.
+
+### Option 1: Using a Cron Container
+
+Add to your `docker-compose.yml`:
+
+```yaml
+services:
+  cron:
+    image: alpine:latest
+    container_name: firefly-cron
+    command: sh -c "echo '0 3 * * * wget -qO- http://app:8080/api/v1/cron/YOUR_STATIC_CRON_TOKEN' | crontab - && crond -f -l 2"
+    depends_on:
+      - app
+```
+
+### Option 2: Host Cron Job
+
+Add to your host's crontab:
+
+```bash
+0 3 * * * docker exec firefly-app php artisan schedule:run
+```
+
+## Data Persistence
+
+Firefly III uses Docker volumes to persist data:
+
+- `firefly_upload`: User uploads and attachments
+- `firefly_db`: Database files
+
+### Backup Your Data
+
+```bash
+# Backup database (MySQL)
+docker exec firefly-db mysqldump -u firefly -psecret_firefly_password firefly > backup.sql
+
+# Backup database (PostgreSQL)
+docker exec firefly-db pg_dump -U firefly firefly > backup.sql
+
+# Backup uploads
+docker run --rm -v firefly_upload:/data -v $(pwd):/backup alpine tar czf /backup/uploads.tar.gz -C /data .
+```
+
+## Updating Firefly III
+
+<Steps>
+  <Step title="Backup your data">
+    Always backup before updating (see above).
+  </Step>
+
+  <Step title="Pull the latest image">
+    ```bash
+    docker compose pull app
+    ```
+  </Step>
+
+  <Step title="Restart the container">
+    ```bash
+    docker compose up -d
+    ```
+    
+    The container will automatically run database migrations during startup.
+  </Step>
+
+  <Step title="Verify the update">
+    Check the logs to ensure the update was successful:
+    
+    ```bash
+    docker compose logs -f app
+    ```
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### Permission Issues
+
+If you encounter permission errors:
+
+```bash
+docker exec firefly-app chown -R www-data:www-data /var/www/html/storage
+```
+
+### Database Connection Failed
+
+Check that:
+1. Database container is running: `docker ps`
+2. Database credentials match between containers
+3. Containers are on the same network
+
+### Container Won't Start
+
+View logs for errors:
+
+```bash
+docker compose logs app
+```
+
+Common issues:
+- Invalid `APP_KEY` (must be exactly 32 characters)
+- Database not ready (wait a few moments and retry)
+- Port 8080 already in use (change to a different port)
+
+## Environment Variables
+
+See the [Configuration Reference](/installation/configuration) for a complete list of environment variables.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/installation/configuration">
+    Learn about all available configuration options
+  </Card>
+  <Card title="First Steps" icon="rocket" href="/getting-started/first-steps">
+    Set up your first accounts and transactions
+  </Card>
+</CardGroup>

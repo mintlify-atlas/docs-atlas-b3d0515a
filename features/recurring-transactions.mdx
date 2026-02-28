@@ -1,0 +1,478 @@
+---
+title: "Recurring Transactions"
+description: "Automate regular transactions with recurring schedules"
+---
+
+## Overview
+
+Recurring transactions automatically create new transactions on a schedule. Perfect for regular income, expenses, and transfers that happen at predictable intervals. Set them up once, and Firefly III handles the rest.
+
+## What Are Recurring Transactions?
+
+Recurring transactions are templates that automatically generate real transactions:
+- **Salary**: Automatic deposit every two weeks
+- **Rent**: Monthly withdrawal on the 1st
+- **Savings Transfer**: Automatic transfer to savings every payday
+- **Subscriptions**: Monthly service payments
+
+<Note>
+Recurring transactions create actual transactions automatically. They're different from [Bills](/features/bills), which only track if expected payments occurred.
+</Note>
+
+## Creating a Recurring Transaction
+
+<Steps>
+  <Step title="Navigate to Recurring Transactions">
+    Go to **Recurring Transactions** in the main navigation.
+  </Step>
+  
+  <Step title="Create New Recurrence">
+    Click **Create New Recurring Transaction**.
+  </Step>
+  
+  <Step title="Enter Transaction Details">
+    Fill in the transaction template:
+    - **Title**: Name for this recurrence ("Monthly Rent")
+    - **Transaction Type**: Withdrawal, Deposit, or Transfer
+    - **Source Account**: Where money comes from
+    - **Destination Account**: Where money goes to
+    - **Amount**: Transaction amount
+    - **Description**: Transaction description
+  </Step>
+  
+  <Step title="Set Schedule">
+    Define when transactions are created:
+    - **First Date**: When the first transaction should occur
+    - **Repeat Frequency**: How often it repeats
+    - **Repetitions**: How many times (or "Forever")
+    - **End Date**: When to stop (optional)
+  </Step>
+  
+  <Step title="Configure Options">
+    - **Apply Rules**: Auto-apply rules to created transactions
+    - **Active**: Enable/disable the recurrence
+    - **Category**: Auto-assign category
+    - **Budget**: Auto-assign budget
+    - **Tags**: Auto-apply tags
+  </Step>
+  
+  <Step title="Save">
+    Click **Save** to activate the recurring transaction.
+  </Step>
+</Steps>
+
+## Repetition Patterns
+
+Firefly III supports various repetition schedules:
+
+### Common Frequencies
+
+<CardGroup cols={2}>
+  <Card title="Daily" icon="calendar-day">
+    Every day or every X days
+    - Daily vitamins expense
+    - Daily coffee
+  </Card>
+  
+  <Card title="Weekly" icon="calendar-week">
+    Every week on specific day(s)
+    - Weekly grocery shopping
+    - Every Monday, Wednesday, Friday
+  </Card>
+  
+  <Card title="Monthly" icon="calendar">
+    Every month on specific date
+    - 1st of every month (rent)
+    - 15th of every month (subscriptions)
+    - Last day of month
+  </Card>
+  
+  <Card title="Yearly" icon="calendar-days">
+    Once per year
+    - Birthday gift
+    - Annual insurance premium
+    - Yearly subscription renewal
+  </Card>
+</CardGroup>
+
+### Advanced Patterns
+
+<Accordion title="Every X weeks/months/years">
+  Skip periods between repetitions:
+  - Every 2 weeks (bi-weekly paycheck)
+  - Every 3 months (quarterly payment)
+  - Every 6 months (semi-annual insurance)
+</Accordion>
+
+<Accordion title="Specific days of the week">
+  Repeat on certain weekdays:
+  - Every Monday and Thursday
+  - Every Friday (weekly treat)
+  - Every weekend day
+</Accordion>
+
+<Accordion title="Day of month">
+  Monthly on specific date:
+  - Every 1st (rent)
+  - Every 15th (credit card)
+  - Last day of month (subscriptions)
+</Accordion>
+
+## Setting Up Common Recurring Transactions
+
+### Bi-Weekly Salary
+
+<Steps>
+  <Step title="Transaction Type">
+    Deposit
+  </Step>
+  <Step title="Source">
+    Your employer (revenue account)
+  </Step>
+  <Step title="Destination">
+    Your checking account
+  </Step>
+  <Step title="Frequency">
+    Every 2 weeks
+  </Step>
+  <Step title="First Date">
+    Your next payday
+  </Step>
+  <Step title="Repetitions">
+    Forever
+  </Step>
+</Steps>
+
+### Monthly Rent
+
+<Steps>
+  <Step title="Transaction Type">
+    Withdrawal
+  </Step>
+  <Step title="Source">
+    Your checking account
+  </Step>
+  <Step title="Destination">
+    Your landlord (expense account)
+  </Step>
+  <Step title="Frequency">
+    Monthly, 1st of month
+  </Step>
+  <Step title="Category">
+    Housing
+  </Step>
+  <Step title="Budget">
+    Housing Budget
+  </Step>
+</Steps>
+
+### Automatic Savings
+
+<Steps>
+  <Step title="Transaction Type">
+    Transfer
+  </Step>
+  <Step title="Source">
+    Your checking account
+  </Step>
+  <Step title="Destination">
+    Your savings account
+  </Step>
+  <Step title="Frequency">
+    Same as your payday schedule
+  </Step>
+  <Step title="Amount">
+    Amount to save each period
+  </Step>
+</Steps>
+
+## Managing Recurring Transactions
+
+### Viewing Recurrences
+
+The recurring transactions list shows:
+- **Active status**: Green (active) or gray (inactive)
+- **Next occurrence**: When the next transaction will be created
+- **Last created**: When the most recent transaction was generated
+- **Repetitions remaining**: How many more times it will run
+
+### Editing Recurrences
+
+<Warning>
+Editing a recurrence only affects future transactions. Past transactions created by this recurrence are not changed.
+</Warning>
+
+To modify a recurrence:
+1. Open the recurring transaction
+2. Click **Edit**
+3. Make your changes
+4. Save
+
+### Deleting Recurrences
+
+Deleting a recurrence:
+- Stops future transactions from being created
+- Does NOT delete transactions already created
+- Cannot be undone
+
+<Tip>
+Instead of deleting, consider marking the recurrence as inactive if you might need it again later.
+</Tip>
+
+## Triggering Recurrences Manually
+
+Test or force a recurrence to run:
+
+<Steps>
+  <Step title="Open Recurrence">
+    View the recurring transaction details.
+  </Step>
+  
+  <Step title="Trigger Now">
+    Click **Trigger Now** or **Test**.
+  </Step>
+  
+  <Step title="Review Created Transaction">
+    Firefly III creates the transaction immediately.
+  </Step>
+</Steps>
+
+<Note>
+Manually triggering doesn't affect the regular schedule. The next automatic transaction will still occur as scheduled.
+</Note>
+
+## Recurrence Options
+
+### Apply Rules
+
+When enabled, [Rules](/features/rules) automatically process created transactions:
+- Auto-categorize transactions
+- Apply budgets
+- Add tags
+- Modify descriptions
+
+<Tip>
+Enable this if you have rules that should apply to these transactions. Disable it if the recurrence already sets all necessary fields.
+</Tip>
+
+### Active vs. Inactive
+
+- **Active recurrences**: Generate transactions automatically
+- **Inactive recurrences**: Paused, don't create transactions
+
+Use inactive status for:
+- Temporary pauses (salary during unpaid leave)
+- Seasonal expenses (heating bills in summer)
+- Suspended subscriptions
+
+### Title vs. Description
+
+- **Title**: Internal name for the recurrence ("Netflix Subscription")
+- **Description**: What appears on created transactions ("Monthly streaming service")
+
+## Handling Changes
+
+### Temporary Skip
+
+To skip just one occurrence:
+1. Don't delete the recurrence
+2. Wait for the unwanted transaction to be created
+3. Delete that individual transaction
+4. The recurrence continues normally
+
+### Amount Changes
+
+When a recurring amount changes:
+1. Edit the recurrence
+2. Update the amount
+3. Save changes
+4. Future transactions use the new amount
+
+### Account Changes
+
+If the account changes:
+1. Mark the old recurrence as inactive
+2. Create a new recurrence with the new account
+3. Keep the old one for historical reference
+
+## Recurring Transaction History
+
+View all transactions created by a recurrence:
+1. Open the recurring transaction
+2. View the **Transactions** tab
+3. See chronological list of all created transactions
+
+This helps:
+- Verify transactions were created correctly
+- Track history of recurring expenses
+- Identify when amounts changed
+
+## Ending Recurring Transactions
+
+### Set End Date
+
+For recurrences with a known end:
+- Limited-term subscriptions
+- Loan payments (final payment date)
+- Promotional periods
+
+Set the **End Date** or **Repeat Until** date.
+
+### Set Number of Repetitions
+
+For a specific number of occurrences:
+- "6 more times"
+- "12 monthly payments"
+- "24 bi-weekly deposits"
+
+Set **Repetitions** to the count.
+
+<Accordion title="Forever vs. Limited">
+  - **Forever**: For ongoing transactions with no end (salary, rent)
+  - **Limited**: For temporary or finite transactions (loan payments, limited subscriptions)
+</Accordion>
+
+## Best Practices
+
+<Accordion title="Start with Major Regular Transactions">
+  Begin with the most predictable, frequent transactions:
+  - Salary/income
+  - Rent/mortgage
+  - Regular savings transfers
+  - Major subscriptions
+  
+  Add others as you get comfortable.
+</Accordion>
+
+<Accordion title="Review Created Transactions">
+  Regularly check that recurring transactions are being created correctly:
+  - Amounts are right
+  - Accounts are correct
+  - Categories and budgets apply properly
+</Accordion>
+
+<Accordion title="Use Realistic First Dates">
+  Set the first date to the actual next occurrence:
+  - If creating on Jan 15 for a monthly bill due Jan 1, set first date to Feb 1
+  - Don't backdate recurrences
+</Accordion>
+
+<Accordion title="Include Category and Budget">
+  Pre-assign categories and budgets in the recurrence template:
+  - Saves time on each created transaction
+  - Ensures consistency
+  - Improves report accuracy
+</Accordion>
+
+<Accordion title="Name Clearly">
+  Use descriptive titles:
+  - Good: "Bi-weekly Paycheck - Employer Name"
+  - Poor: "Deposit 1"
+  
+  You'll thank yourself when managing multiple recurrences.
+</Accordion>
+
+## Split Recurring Transactions
+
+Create recurring transactions with splits:
+1. Set up the recurrence normally
+2. Add multiple transaction splits
+3. Assign different categories/budgets to each split
+4. Save
+
+<Accordion title="Use case: Split paycheck">
+  Example - Bi-weekly paycheck with automatic splits:
+  - Main amount to checking account
+  - Split 1: $200 to savings (transfer)
+  - Split 2: $100 to investment account (transfer)
+  
+  One recurrence creates multiple transactions.
+</Accordion>
+
+## Troubleshooting
+
+<Accordion title="Recurrence not creating transactions">
+  Check:
+  - Recurrence is marked as **Active**
+  - First/next date is in the future (not past)
+  - Repetitions remaining > 0 (if limited)
+  - No end date, or end date is in the future
+  - Firefly III cron job is running (if self-hosted)
+</Accordion>
+
+<Accordion title="Wrong transaction created">
+  If an incorrect transaction was created:
+  1. Delete or edit the incorrect transaction
+  2. Edit the recurrence to fix the template
+  3. Future transactions will be correct
+</Accordion>
+
+<Accordion title="Need to change past transactions">
+  Recurrences don't update past transactions. To change them:
+  - Edit each transaction individually
+  - Use bulk edit if many need changing
+  - Use rules to automatically fix future transactions
+</Accordion>
+
+<Accordion title="Duplicate transactions appearing">
+  Possible causes:
+  - Recurrence is running AND you're manually creating transactions
+  - Import tool is creating duplicates
+  - Multiple recurrences for the same thing
+  
+  Solution: Disable or delete duplicate recurrences.
+</Accordion>
+
+## Recurring Transactions vs. Bills
+
+<CardGroup cols={2}>
+  <Card title="Recurring Transactions" icon="rotate">
+    **Creates transactions**
+    - Automatically generates entries
+    - Reduces manual work
+    - Best for predictable transactions
+    - Runs on schedule
+  </Card>
+  
+  <Card title="Bills" icon="file-invoice">
+    **Tracks transactions**
+    - Monitors if payment occurred
+    - Matches existing transactions
+    - Best for verifying expenses
+    - Alerts to missed payments
+  </Card>
+</CardGroup>
+
+<Tip>
+**Use both together!** Create a recurring transaction to auto-enter rent each month, and create a bill to verify the payment was actually made.
+</Tip>
+
+## Advanced Features
+
+### Recurrence Metadata
+
+Store additional information:
+- Notes about the recurrence
+- Why amounts changed
+- Links to related documents
+
+### Foreign Currency Recurrences
+
+Create recurring transactions in foreign currencies:
+- Set the amount in the foreign currency
+- Firefly III converts automatically
+- Exchange rates applied at creation time
+
+### Piggy Bank Connections
+
+Connect recurring transfers to piggy banks:
+- Automatic savings toward goals
+- Regular contributions
+- Progress tracking
+
+## Related Features
+
+- [Transactions](/features/transactions) - What recurrences create
+- [Bills](/features/bills) - Track expected recurring payments
+- [Rules](/features/rules) - Automatically process recurring transactions
+- [Budgets](/features/budgets) - Plan for recurring expenses

@@ -1,0 +1,268 @@
+---
+title: Multi-currency support
+description: Manage multiple currencies and exchange rates in Firefly III
+---
+
+Firefly III provides comprehensive multi-currency support, allowing you to track finances across different currencies with automatic exchange rate management.
+
+## Overview
+
+Firefly III supports:
+- Multiple currencies for accounts and transactions
+- Automatic currency conversion
+- Custom exchange rates
+- Foreign currency amounts on transactions
+- Primary currency for reporting
+
+<CardGroup cols={2}>
+  <Card title="Add currencies" icon="coins" href="#enabling-currencies">
+    Enable and configure additional currencies
+  </Card>
+  <Card title="Exchange rates" icon="arrow-right-arrow-left" href="#exchange-rates">
+    Manage currency exchange rates
+  </Card>
+  <Card title="Multi-currency transactions" icon="money-bill-transfer" href="#multi-currency-transactions">
+    Create transactions with foreign amounts
+  </Card>
+  <Card title="Primary currency" icon="star" href="#primary-currency">
+    Set your reporting currency
+  </Card>
+</CardGroup>
+
+## Currency management
+
+### Enabling currencies
+
+Firefly III comes with many currencies pre-configured. To enable a currency:
+
+<Steps>
+  <Step title="Navigate to currencies">
+    Go to **Options** > **Currencies** in the main menu
+  </Step>
+  
+  <Step title="Enable currency">
+    Find the currency you want to use and click **Enable**
+  </Step>
+  
+  <Step title="Set as default (optional)">
+    You can optionally set this as your default currency for new accounts
+  </Step>
+</Steps>
+
+<Info>Each user group can have its own set of enabled currencies and exchange rates</Info>
+
+### Primary currency
+
+Your primary currency is used for:
+- Financial reports and charts
+- Budget calculations
+- Net worth calculations
+- Dashboard summaries
+
+To change your primary currency:
+
+1. Go to **Profile** > **Preferences**
+2. Find the **Primary currency** setting
+3. Select your preferred currency
+4. Save changes
+
+<Warning>Changing your primary currency will trigger a recalculation of all transaction amounts. This may take some time for large datasets.</Warning>
+
+## Exchange rates
+
+Firefly III uses exchange rates to convert between currencies. Exchange rates are stored per date, allowing historical accuracy.
+
+### Exchange rate model
+
+Exchange rates in Firefly III consist of:
+- **From currency**: Source currency code (e.g., EUR)
+- **To currency**: Target currency code (e.g., USD)
+- **Date**: The date this rate applies to
+- **Rate**: The conversion rate (stored as string for precision)
+
+### Managing exchange rates
+
+<Tabs>
+  <Tab title="Manual entry">
+    <Steps>
+      <Step title="Navigate to exchange rates">
+        Go to **Options** > **Currencies** > **Exchange rates**
+      </Step>
+      
+      <Step title="Add new rate">
+        Click **Add exchange rate** and fill in:
+        - From currency
+        - To currency
+        - Date
+        - Exchange rate
+      </Step>
+      
+      <Step title="Save">
+        Click **Submit** to save the exchange rate
+      </Step>
+    </Steps>
+  </Tab>
+  
+  <Tab title="API">
+    Use the Exchange Rates API endpoints:
+
+    ```bash
+    # Get exchange rate
+    curl -X GET "https://your-firefly.local/api/v1/exchange-rates/EUR/USD" \
+      -H "Authorization: Bearer YOUR_TOKEN"
+
+    # Get rate for specific date
+    curl -X GET "https://your-firefly.local/api/v1/exchange-rates/EUR/USD/2024-01-01" \
+      -H "Authorization: Bearer YOUR_TOKEN"
+    ```
+  </Tab>
+</Tabs>
+
+### Automatic rate fetching
+
+<Info>Firefly III can automatically fetch exchange rates from external sources if configured. Check your .env file for `CURRENCY_EXCHANGE_PROVIDER` settings.</Info>
+
+## Multi-currency transactions
+
+You can create transactions that involve multiple currencies, useful for:
+- International transfers
+- Foreign purchases on credit cards
+- Travel expenses
+- International business transactions
+
+### Creating multi-currency transactions
+
+<Steps>
+  <Step title="Create transaction">
+    Start creating a new transaction as usual
+  </Step>
+  
+  <Step title="Select accounts">
+    Choose your source and destination accounts
+  </Step>
+  
+  <Step title="Enter foreign amount">
+    If the accounts use different currencies:
+    - Enter the amount in the source account's currency
+    - Optionally enter the foreign currency amount
+    - Firefly III will calculate the exchange rate or use the existing rate
+  </Step>
+  
+  <Step title="Review exchange rate">
+    The calculated exchange rate will be shown. You can override it if needed
+  </Step>
+</Steps>
+
+### Foreign currency amounts
+
+For transactions in your account's currency but with foreign amounts:
+
+```bash
+# Example: EUR account, USD purchase
+Account currency: EUR
+Transaction amount: 10.00 EUR
+Foreign amount: 11.50 USD
+Foreign currency: USD
+```
+
+This is useful for:
+- Credit card transactions in foreign currencies
+- Online purchases with currency conversion
+- Tracking the original purchase amount
+
+<Tip>Always enter the foreign amount when available. This provides more accurate tracking and reporting.</Tip>
+
+## Currency conversion in reports
+
+When viewing reports and charts, Firefly III automatically converts all amounts to your primary currency using:
+
+1. **Historical rates**: Uses the exchange rate valid on the transaction date
+2. **Fallback rates**: If no rate exists for that date, uses the nearest available rate
+3. **Default rate**: If no rates are configured, defaults to 1:1 (not recommended)
+
+### Primary currency amounts
+
+Each transaction stores:
+- **Original amount**: In the account's native currency
+- **Primary currency amount**: Converted amount in your primary currency
+- **Exchange rate used**: For audit purposes
+
+<Note>Primary currency amounts are recalculated when you change your primary currency or update exchange rates</Note>
+
+## Best practices
+
+<AccordionGroup>
+  <Accordion title="Keep exchange rates updated">
+    Regularly update exchange rates, especially for frequently used currency pairs. Outdated rates can lead to inaccurate reporting.
+  </Accordion>
+  
+  <Accordion title="Use foreign amounts consistently">
+    When making foreign currency transactions, always enter both the converted and original foreign amount for better tracking.
+  </Accordion>
+  
+  <Accordion title="Set appropriate primary currency">
+    Choose your primary currency based on where you live and earn income, not based on your strongest currency holdings.
+  </Accordion>
+  
+  <Accordion title="Consider account currency carefully">
+    When creating accounts, set the currency to match the actual account's currency at the financial institution.
+  </Accordion>
+  
+  <Accordion title="Regular reconciliation">
+    Reconcile multi-currency accounts regularly to catch any exchange rate discrepancies early.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<Accordion title="Incorrect conversion rates">
+  **Problem**: Amounts are being converted at wrong rates
+  
+  **Solutions**:
+  - Check that exchange rates are entered correctly
+  - Verify the date on your exchange rates
+  - Ensure you're using the correct currency codes (EUR, USD, not Euro, Dollar)
+  - Clear cache: `php artisan cache:clear`
+</Accordion>
+
+<Accordion title="Missing exchange rates">
+  **Problem**: Error about missing exchange rates
+  
+  **Solutions**:
+  - Add the required exchange rate for the transaction date
+  - Enable automatic exchange rate fetching if available
+  - Verify both currencies are enabled
+</Accordion>
+
+<Accordion title="Primary currency changes not reflecting">
+  **Problem**: Changed primary currency but amounts still show in old currency
+  
+  **Solutions**:
+  - Wait for background recalculation to complete
+  - Check logs for any errors during recalculation
+  - Manually trigger recalculation: `php artisan firefly-iii:upgrade-primary-currency-amounts`
+</Accordion>
+
+## API reference
+
+For programmatic currency management, see:
+- [Currencies API](/api/currencies) - Manage currencies
+- [Exchange Rates API](/api/overview#exchange-rates) - Get and set exchange rates
+- [Transactions API](/api/transactions) - Multi-currency transactions
+
+## Related features
+
+<CardGroup cols={2}>
+  <Card title="Accounts" icon="building-columns" href="/features/accounts">
+    Set currency for each account
+  </Card>
+  <Card title="Transactions" icon="receipt" href="/features/transactions">
+    Create multi-currency transactions
+  </Card>
+  <Card title="Reports" icon="chart-line" href="/features/reports">
+    View consolidated reports in primary currency
+  </Card>
+  <Card title="Budgets" icon="wallet" href="/features/budgets">
+    Budget in your primary currency
+  </Card>
+</CardGroup>

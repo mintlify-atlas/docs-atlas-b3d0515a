@@ -1,0 +1,438 @@
+---
+title: Configuration Reference
+description: Complete guide to all Firefly III environment variables and configuration options
+---
+
+Firefly III is configured using environment variables, typically stored in a `.env` file or passed to your container.
+
+<Note>
+Many variables support a `_FILE` suffix (e.g., `APP_KEY_FILE`, `DB_PASSWORD_FILE`) for Docker secrets or other file-based secret management.
+</Note>
+
+## Application Settings
+
+Core application configuration.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `APP_ENV` | `production` | Application environment. Use `production` for live deployments. Never use `testing`. |
+| `APP_DEBUG` | `false` | Enable debug mode. Shows detailed error information. **Never enable in production!** |
+| `APP_KEY` | *required* | 32-character encryption key. Generate with `php artisan key:generate` or `head /dev/urandom \| LC_ALL=C tr -dc 'A-Za-z0-9' \| head -c 32`. |
+| `APP_NAME` | `FireflyIII` | Application name. Leave as default. |
+| `APP_URL` | `http://localhost` | Public URL where Firefly III is accessible. Include the protocol (`http://` or `https://`). |
+| `SITE_OWNER` | *required* | Your email address. Displayed in error messages to non-admin users. |
+| `TZ` | `Europe/Amsterdam` | Timezone for date/time display. See [tz database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). |
+| `DEFAULT_LANGUAGE` | `en_US` | Default language for new users. See [available languages](https://github.com/firefly-iii/firefly-iii/blob/main/config/firefly.php#L123). |
+| `DEFAULT_LOCALE` | `equal` | Number formatting locale. Use `equal` to match language, or specify (e.g., `en_US`). |
+| `FIREFLY_III_LAYOUT` | `v1` | UI layout version. `v2` is experimental and may cause data loss. |
+
+<Warning>
+The `APP_KEY` must be exactly 32 characters. Changing it after setup will break encrypted data. Keep it secure and backed up!
+</Warning>
+
+## Database Configuration
+
+Database connection settings.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DB_CONNECTION` | `mysql` | Database type: `mysql`, `pgsql`, or `sqlite`. |
+| `DB_HOST` | `db` | Database server hostname or IP. |
+| `DB_PORT` | `3306` | Database port (`3306` for MySQL/MariaDB, `5432` for PostgreSQL). |
+| `DB_DATABASE` | `firefly` | Database name. |
+| `DB_USERNAME` | `firefly` | Database username. |
+| `DB_PASSWORD` | *required* | Database password. |
+| `DB_SOCKET` | *(empty)* | Unix socket path (alternative to host/port). Leave empty for TCP connection. |
+
+### MySQL/MariaDB SSL
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MYSQL_USE_SSL` | `false` | Enable SSL for MySQL connections. |
+| `MYSQL_SSL_VERIFY_SERVER_CERT` | `true` | Verify SSL certificate. |
+| `MYSQL_SSL_CAPATH` | `/etc/ssl/certs/` | Path to CA certificates directory. |
+| `MYSQL_SSL_CA` | *(empty)* | Path to CA certificate file. |
+| `MYSQL_SSL_CERT` | *(empty)* | Path to client certificate. |
+| `MYSQL_SSL_KEY` | *(empty)* | Path to client key. |
+| `MYSQL_SSL_CIPHER` | *(empty)* | SSL cipher to use. |
+
+### PostgreSQL SSL
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PGSQL_SSL_MODE` | `prefer` | SSL mode: `disable`, `allow`, `prefer`, `require`, `verify-ca`, or `verify-full`. |
+| `PGSQL_SSL_ROOT_CERT` | `null` | Path to root certificate. |
+| `PGSQL_SSL_CERT` | `null` | Path to client certificate. |
+| `PGSQL_SSL_KEY` | `null` | Path to client key. |
+| `PGSQL_SSL_CRL_FILE` | `null` | Path to certificate revocation list. |
+| `PGSQL_SCHEMA` | `public` | Database schema. For PostgreSQL 15+, you may need to create a custom schema with proper grants. |
+
+## Cache and Session
+
+Performance and session management.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CACHE_DRIVER` | `file` | Cache driver: `file`, `database`, `redis`, or `memcached`. |
+| `SESSION_DRIVER` | `file` | Session driver: `file`, `database`, `redis`, or `cookie`. |
+| `CACHE_PREFIX` | `firefly` | Cache key prefix. |
+
+### Redis Configuration
+
+Used when `CACHE_DRIVER` or `SESSION_DRIVER` is set to `redis`.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `REDIS_SCHEME` | `tcp` | Connection scheme: `tcp` or `unix`. |
+| `REDIS_HOST` | `127.0.0.1` | Redis host (when using `tcp`). |
+| `REDIS_PORT` | `6379` | Redis port (when using `tcp`). |
+| `REDIS_PATH` | *(empty)* | Socket path (when using `unix`). |
+| `REDIS_USERNAME` | *(empty)* | Redis username (Redis 6+ with ACL). |
+| `REDIS_PASSWORD` | *(empty)* | Redis password. |
+| `REDIS_DB` | `"0"` | Redis database for general cache (use quotes). |
+| `REDIS_CACHE_DB` | `"1"` | Redis database for Laravel cache (use quotes). |
+
+<Note>
+Using Redis significantly improves performance, especially with multiple users.
+</Note>
+
+## Logging
+
+Log configuration for debugging and auditing.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LOG_CHANNEL` | `stack` | Log channel: `stack`, `single`, `daily`, `syslog`, `errorlog`, `stdout`, or `papertrail`. |
+| `APP_LOG_LEVEL` | `notice` | Minimum log level: `debug`, `info`, `notice`, `warning`, `error`, `critical`, `alert`, `emergency`. |
+| `AUDIT_LOG_LEVEL` | `emergency` | Audit log level. Set to `info` to enable, `emergency` to disable. |
+| `AUDIT_LOG_CHANNEL` | *(empty)* | Separate channel for audit logs: `audit_stdout`, `audit_syslog`, `audit_errorlog`, `audit_daily`, `audit_papertrail`. |
+
+### Papertrail
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PAPERTRAIL_HOST` | *(empty)* | Papertrail host. |
+| `PAPERTRAIL_PORT` | *(empty)* | Papertrail port. |
+
+<Warning>
+Audit logs may contain sensitive financial information. Store them securely and comply with data protection regulations.
+</Warning>
+
+## Email Configuration
+
+Email notifications and password resets.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MAIL_MAILER` | `log` | Mail driver: `smtp`, `sendmail`, `mailgun`, `mandrill`, `sparkpost`, `mailersend`, or `log` (writes to logs only). |
+| `MAIL_HOST` | `null` | SMTP server hostname. |
+| `MAIL_PORT` | `2525` | SMTP port (typically `587` for TLS, `465` for SSL). |
+| `MAIL_FROM` | `changeme@example.com` | "From" email address. |
+| `MAIL_USERNAME` | `null` | SMTP username. |
+| `MAIL_PASSWORD` | `null` | SMTP password. |
+| `MAIL_ENCRYPTION` | `null` | Encryption: `tls`, `ssl`, or leave empty for none. |
+| `MAIL_SENDMAIL_COMMAND` | *(empty)* | Custom sendmail command. |
+| `SEND_ERROR_MESSAGE` | `true` | Send error emails to `SITE_OWNER`. |
+
+### Self-Signed Certificates
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MAIL_ALLOW_SELF_SIGNED` | `false` | Allow self-signed SMTP certificates. |
+| `MAIL_VERIFY_PEER` | `true` | Verify peer certificate. |
+| `MAIL_VERIFY_PEER_NAME` | `true` | Verify peer name. |
+
+### Third-Party Email Services
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MAILGUN_DOMAIN` | *(empty)* | Mailgun domain. |
+| `MAILGUN_SECRET` | *(empty)* | Mailgun API key. |
+| `MAILGUN_ENDPOINT` | `api.mailgun.net` | Mailgun endpoint (`api.eu.mailgun.net` for EU region). |
+| `MANDRILL_SECRET` | *(empty)* | Mandrill API key. |
+| `SPARKPOST_SECRET` | *(empty)* | SparkPost API key. |
+| `MAILERSEND_API_KEY` | *(empty)* | MailerSend API key. |
+
+## Authentication
+
+User authentication and security.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AUTHENTICATION_GUARD` | `web` | Authentication method: `web` (built-in) or `remote_user_guard` (for Authelia, etc.). |
+| `AUTHENTICATION_GUARD_HEADER` | `REMOTE_USER` | HTTP header for remote user authentication. |
+| `AUTHENTICATION_GUARD_EMAIL` | *(empty)* | HTTP header for email in remote authentication. |
+| `CUSTOM_LOGOUT_URL` | *(empty)* | Custom URL to redirect after logout. |
+
+### OAuth/Passport
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PASSPORT_PRIVATE_KEY` | *(auto-generated)* | OAuth private key. Usually auto-generated. |
+| `PASSPORT_PUBLIC_KEY` | *(auto-generated)* | OAuth public key. Usually auto-generated. |
+
+<Note>
+See the [authentication documentation](https://docs.firefly-iii.org/how-to/firefly-iii/advanced/authentication/) for details on alternative authentication methods.
+</Note>
+
+## Security Headers
+
+Security-related HTTP headers.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DISABLE_FRAME_HEADER` | `false` | Disable X-Frame-Options header. May be needed for tools like Organizr. **Use at your own risk.** |
+| `DISABLE_CSP_HEADER` | `false` | Disable Content Security Policy header. May be needed for old browsers. **Use at your own risk.** |
+
+## Proxy and Networking
+
+Reverse proxy and network configuration.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TRUSTED_PROXIES` | *(empty)* | Comma-separated list of trusted proxy IPs, or `**` to trust all proxies. Required when behind a reverse proxy. |
+| `COOKIE_PATH` | `"/"` | Cookie path. |
+| `COOKIE_DOMAIN` | *(empty)* | Cookie domain. |
+| `COOKIE_SECURE` | `false` | Set cookies as secure (HTTPS only). Enable for HTTPS deployments. |
+| `COOKIE_SAMESITE` | `lax` | SameSite cookie attribute: `lax`, `strict`, or `none`. |
+
+<Note>
+When using a reverse proxy (nginx, Traefik, etc.), set `TRUSTED_PROXIES=**` to ensure correct IP detection and HTTPS redirection.
+</Note>
+
+## Cron Jobs
+
+Scheduled task configuration.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `STATIC_CRON_TOKEN` | *(empty)* | Static token for cron jobs. Set to a 32-character string. Use this in the cron URL instead of a user token. |
+
+**Cron URL format:**
+```
+https://your-firefly-url.com/api/v1/cron/YOUR_STATIC_CRON_TOKEN
+```
+
+See the [cron documentation](https://docs.firefly-iii.org/how-to/firefly-iii/advanced/cron/) for setup instructions.
+
+## Maps
+
+Default map location.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MAP_DEFAULT_LAT` | `51.983333` | Default map latitude. |
+| `MAP_DEFAULT_LONG` | `5.916667` | Default map longitude. |
+| `MAP_DEFAULT_ZOOM` | `6` | Default map zoom level. |
+
+## Analytics
+
+Tracking configuration (optional).
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TRACKER_SITE_ID` | *(empty)* | Matomo site ID. |
+| `TRACKER_URL` | *(empty)* | Matomo URL (without protocol). |
+
+## Docker-Specific Settings
+
+Settings for Docker container startup optimization.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DKR_CHECK_SQLITE` | `true` | Check if SQLite database exists during startup. Can be disabled if not using SQLite. |
+
+## Advanced/Internal Settings
+
+<Warning>
+Do not modify these unless you know what you're doing.
+</Warning>
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BROADCAST_DRIVER` | `log` | Broadcasting driver (internal). |
+| `QUEUE_DRIVER` | `sync` | Queue driver (internal). |
+| `PUSHER_KEY` | *(empty)* | Pusher key (unused). |
+| `PUSHER_SECRET` | *(empty)* | Pusher secret (unused). |
+| `PUSHER_ID` | *(empty)* | Pusher ID (unused). |
+| `IPINFO_TOKEN` | *(empty)* | IPInfo token (internal). |
+| `DEMO_USERNAME` | *(empty)* | Demo mode username (internal). |
+| `DEMO_PASSWORD` | *(empty)* | Demo mode password (internal). |
+
+## Environment File Example
+
+Here's a complete example `.env` file for a production deployment:
+
+<CodeGroup>
+```ini .env (MySQL)
+# Application
+APP_ENV=production
+APP_DEBUG=false
+APP_KEY=SomeRandomStringOf32CharsExactly
+APP_URL=https://firefly.example.com
+SITE_OWNER=admin@example.com
+TZ=America/New_York
+DEFAULT_LANGUAGE=en_US
+
+# Database
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=firefly
+DB_USERNAME=firefly
+DB_PASSWORD=secure_password_here
+
+# Cache (Redis for performance)
+CACHE_DRIVER=redis
+SESSION_DRIVER=redis
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_DB="0"
+REDIS_CACHE_DB="1"
+
+# Logging
+LOG_CHANNEL=daily
+APP_LOG_LEVEL=notice
+AUDIT_LOG_LEVEL=info
+AUDIT_LOG_CHANNEL=audit_daily
+
+# Email
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.example.com
+MAIL_PORT=587
+MAIL_FROM=firefly@example.com
+MAIL_USERNAME=firefly@example.com
+MAIL_PASSWORD=smtp_password_here
+MAIL_ENCRYPTION=tls
+SEND_ERROR_MESSAGE=true
+
+# Proxy (if behind reverse proxy)
+TRUSTED_PROXIES=**
+COOKIE_SECURE=true
+
+# Cron
+STATIC_CRON_TOKEN=AnotherRandomStringOf32Characters
+
+# Leave these as default
+APP_NAME=FireflyIII
+BROADCAST_DRIVER=log
+QUEUE_DRIVER=sync
+CACHE_PREFIX=firefly
+```
+
+```ini .env (PostgreSQL)
+# Application
+APP_ENV=production
+APP_DEBUG=false
+APP_KEY=SomeRandomStringOf32CharsExactly
+APP_URL=https://firefly.example.com
+SITE_OWNER=admin@example.com
+TZ=America/New_York
+DEFAULT_LANGUAGE=en_US
+
+# Database
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=firefly
+DB_USERNAME=firefly
+DB_PASSWORD=secure_password_here
+PGSQL_SCHEMA=public
+
+# Cache (file-based)
+CACHE_DRIVER=file
+SESSION_DRIVER=file
+
+# Logging
+LOG_CHANNEL=stack
+APP_LOG_LEVEL=notice
+AUDIT_LOG_LEVEL=emergency
+
+# Email (disabled)
+MAIL_MAILER=log
+
+# Proxy (if behind reverse proxy)
+TRUSTED_PROXIES=**
+
+# Leave these as default
+APP_NAME=FireflyIII
+BROADCAST_DRIVER=log
+QUEUE_DRIVER=sync
+CACHE_PREFIX=firefly
+```
+</CodeGroup>
+
+## Using File-Based Secrets
+
+For Docker Swarm, Kubernetes secrets, or other secret management systems, append `_FILE` to sensitive variables:
+
+```yaml docker-compose.yml
+services:
+  app:
+    image: fireflyiii/core:latest
+    environment:
+      - APP_KEY_FILE=/run/secrets/app_key
+      - DB_PASSWORD_FILE=/run/secrets/db_password
+      - SITE_OWNER_FILE=/run/secrets/site_owner
+      - MAIL_PASSWORD_FILE=/run/secrets/mail_password
+    secrets:
+      - app_key
+      - db_password
+      - site_owner
+      - mail_password
+
+secrets:
+  app_key:
+    file: ./secrets/app_key.txt
+  db_password:
+    file: ./secrets/db_password.txt
+  site_owner:
+    file: ./secrets/site_owner.txt
+  mail_password:
+    file: ./secrets/mail_password.txt
+```
+
+## Validation
+
+After configuration, verify your settings:
+
+<Steps>
+  <Step title="Check database connection">
+    ```bash
+    php artisan tinker
+    ```
+    
+    Then:
+    ```php
+    DB::connection()->getPdo();
+    ```
+    
+    Should return a PDO object without errors.
+  </Step>
+
+  <Step title="Test email (optional)">
+    ```bash
+    php artisan firefly-iii:send-test-message your-email@example.com
+    ```
+  </Step>
+
+  <Step title="Clear caches">
+    After any configuration change:
+    ```bash
+    php artisan config:clear
+    php artisan cache:clear
+    php artisan config:cache
+    ```
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Docker Installation" icon="docker" href="/installation/docker">
+    Deploy with Docker
+  </Card>
+  <Card title="Self-Hosted Installation" icon="server" href="/installation/self-hosted">
+    Install on your own server
+  </Card>
+</CardGroup>

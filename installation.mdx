@@ -1,0 +1,486 @@
+---
+title: Installation overview
+description: Choose the best way to install Firefly III for your environment
+---
+
+## Choose your installation method
+
+Firefly III offers multiple installation options to fit your technical setup and preferences. Choose the method that works best for you.
+
+<CardGroup cols={2}>
+  <Card
+    title="Docker"
+    icon="docker"
+    href="/installation/docker"
+  >
+    **Recommended** - Quick setup with Docker Compose. Perfect for most users.
+  </Card>
+  <Card
+    title="Self-hosted"
+    icon="server"
+    href="/installation/self-hosted"
+  >
+    Install directly on your server with PHP, web server, and database.
+  </Card>
+  <Card
+    title="Kubernetes"
+    icon="dharmachakra"
+    href="/installation/kubernetes"
+  >
+    Deploy in a Kubernetes cluster with Helm charts and manifests.
+  </Card>
+  <Card
+    title="Cloud platforms"
+    icon="cloud"
+    href="/installation/cloud-platforms"
+  >
+    One-click install on Cloudron, YunoHost, and other platforms.
+  </Card>
+</CardGroup>
+
+## System requirements
+
+Before installing Firefly III, ensure your system meets these requirements:
+
+### For Docker installation
+
+<AccordionGroup>
+  <Accordion icon="docker" title="Docker requirements">
+    - Docker Engine 20.10 or newer
+    - Docker Compose 2.0 or newer
+    - At least 512 MB RAM available
+    - 1 GB free disk space (more for your data)
+    - Port 80 or 8080 available (configurable)
+  </Accordion>
+</AccordionGroup>
+
+### For self-hosted installation
+
+<AccordionGroup>
+  <Accordion icon="code" title="PHP requirements">
+    Firefly III requires **PHP 8.5 or higher** with these extensions:
+
+    ```bash
+    # Required PHP extensions
+    php-bcmath
+    php-curl
+    php-fileinfo
+    php-iconv
+    php-intl
+    php-json
+    php-mbstring
+    php-openssl
+    php-pdo
+    php-session
+    php-simplexml
+    php-sodium
+    php-tokenizer
+    php-xml
+    php-xmlwriter
+    ```
+
+    <Note>
+      These extensions are typically included in standard PHP installations but may need to be enabled.
+    </Note>
+  </Accordion>
+
+  <Accordion icon="database" title="Database requirements">
+    Choose one of these database systems:
+
+    **MySQL / MariaDB** (recommended)
+    - MySQL 8.0 or newer
+    - MariaDB 10.6 or newer
+
+    **PostgreSQL**
+    - PostgreSQL 12 or newer
+
+    **SQLite**
+    - SQLite 3.35 or newer
+    - Suitable for development and small installations
+
+    <Warning>
+      For PostgreSQL 15+, you may need to grant schema privileges due to security changes.
+    </Warning>
+  </Accordion>
+
+  <Accordion icon="globe" title="Web server requirements">
+    Firefly III works with:
+
+    - **Apache 2.4+** with `mod_rewrite` enabled
+    - **Nginx 1.18+** with PHP-FPM
+    - **Caddy 2.0+** (automatic HTTPS)
+
+    Ensure the web server has:
+    - Write permissions to `storage/` and `bootstrap/cache/` directories
+    - Access to PHP execution
+    - Proper URL rewriting configured
+  </Accordion>
+</AccordionGroup>
+
+## Installation comparison
+
+Not sure which method to choose? Here's a quick comparison:
+
+| Feature | Docker | Self-hosted | Kubernetes | Cloud Platforms |
+|---------|--------|-------------|------------|----------------|
+| **Ease of setup** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐⭐⭐ |
+| **Maintenance** | Easy | Moderate | Complex | Very easy |
+| **Customization** | High | Very high | Very high | Limited |
+| **Performance** | Excellent | Excellent | Excellent | Good |
+| **Resource usage** | Low | Very low | Medium | Varies |
+| **Best for** | Most users | Advanced users | Enterprise | Beginners |
+
+<Info>
+  **New to self-hosting?** Start with Docker or a cloud platform. You can always migrate to a different setup later.
+</Info>
+
+## Quick start options
+
+### Option 1: Docker (recommended)
+
+The fastest way to get started:
+
+```bash
+# Create directories
+mkdir -p firefly-iii && cd firefly-iii
+
+# Download sample docker-compose.yml and .env
+wget https://raw.githubusercontent.com/firefly-iii/firefly-iii/main/docker-compose.yml
+wget https://raw.githubusercontent.com/firefly-iii/firefly-iii/main/.env.example -O .env
+
+# Edit .env with your settings
+nano .env
+
+# Start Firefly III
+docker-compose up -d
+```
+
+<Card
+  title="Complete Docker guide"
+  icon="docker"
+  href="/installation/docker"
+>
+  Follow the detailed Docker installation guide with all configuration options.
+</Card>
+
+### Option 2: Self-hosted with Composer
+
+For full control over your installation:
+
+```bash
+# Clone the repository
+git clone https://github.com/firefly-iii/firefly-iii.git
+cd firefly-iii
+
+# Install dependencies
+composer install --no-dev --no-scripts
+
+# Copy and configure environment
+cp .env.example .env
+php artisan key:generate
+
+# Set up database
+php artisan migrate --seed
+php artisan passport:install
+```
+
+<Card
+  title="Complete self-hosted guide"
+  icon="server"
+  href="/installation/self-hosted"
+>
+  Follow the detailed self-hosted installation guide with web server configuration.
+</Card>
+
+### Option 3: One-click platforms
+
+Install with a single click on these platforms:
+
+<CardGroup cols={2}>
+  <Card
+    title="Cloudron"
+    icon="cloud"
+    href="https://cloudron.io/store/org.fireflyiii.cloudronapp.html"
+  >
+    Install on Cloudron with automatic updates and backups
+  </Card>
+  <Card
+    title="YunoHost"
+    icon="cube"
+    href="https://github.com/YunoHost-Apps/firefly-iii"
+  >
+    Install via YunoHost package manager
+  </Card>
+  <Card
+    title="Softaculous"
+    icon="wand-magic-sparkles"
+    href="https://www.softaculous.com/softaculous/apps/others/Firefly_III"
+  >
+    Auto-installer for cPanel and Plesk
+  </Card>
+  <Card
+    title="AMPPS"
+    icon="box"
+    href="https://www.ampps.com/"
+  >
+    Local development stack with Firefly III
+  </Card>
+</CardGroup>
+
+## Configuration essentials
+
+After installation, you'll need to configure these core settings:
+
+<Steps>
+  <Step title="Generate application key">
+    The `APP_KEY` is critical for security. Generate a random 32-character string:
+
+    ```bash
+    # For Docker
+    docker-compose exec firefly_iii_app php artisan key:generate
+
+    # For self-hosted
+    php artisan key:generate
+    ```
+
+    Or generate manually:
+    ```bash
+    head /dev/urandom | LC_ALL=C tr -dc 'A-Za-z0-9' | head -c 32 && echo
+    ```
+
+    <Warning>
+      Never share your `APP_KEY`. If compromised, regenerate it immediately.
+    </Warning>
+  </Step>
+
+  <Step title="Configure database connection">
+    Set these environment variables in your `.env` file:
+
+    ```bash .env
+    DB_CONNECTION=mysql  # or 'pgsql' or 'sqlite'
+    DB_HOST=localhost    # or your database host
+    DB_PORT=3306        # 5432 for PostgreSQL
+    DB_DATABASE=firefly
+    DB_USERNAME=firefly
+    DB_PASSWORD=your_secure_password
+    ```
+
+    <Tip>
+      For Docker, use the service name (e.g., `firefly_iii_db`) as `DB_HOST`.
+    </Tip>
+  </Step>
+
+  <Step title="Set your timezone and locale">
+    Configure your preferences:
+
+    ```bash .env
+    # Timezone (see https://www.php.net/manual/en/timezones.php)
+    TZ=America/New_York
+
+    # Language and locale
+    DEFAULT_LANGUAGE=en_US
+    DEFAULT_LOCALE=equal
+    ```
+  </Step>
+
+  <Step title="Configure email (optional)">
+    For notifications and password resets:
+
+    ```bash .env
+    MAIL_MAILER=smtp
+    MAIL_HOST=smtp.example.com
+    MAIL_PORT=587
+    MAIL_FROM=firefly@example.com
+    MAIL_USERNAME=your_username
+    MAIL_PASSWORD=your_password
+    MAIL_ENCRYPTION=tls
+    ```
+
+    <Note>
+      Email is optional but recommended for password recovery and notifications.
+    </Note>
+  </Step>
+</Steps>
+
+## Post-installation steps
+
+After installation, complete these steps:
+
+<AccordionGroup>
+  <Accordion icon="user" title="Create your first user account">
+    1. Open Firefly III in your browser
+    2. Register a new account (first user becomes administrator)
+    3. Set a strong password
+    4. Enable two-factor authentication for security
+  </Accordion>
+
+  <Accordion icon="shield" title="Secure your installation">
+    **Enable HTTPS**
+    - Use a reverse proxy (nginx, Caddy, Traefik)
+    - Obtain SSL certificates (Let's Encrypt recommended)
+    - Force HTTPS redirects
+
+    **Configure firewall**
+    - Only expose necessary ports (80, 443)
+    - Restrict database access to localhost
+    - Consider VPN access for extra security
+
+    **Set proper permissions**
+    ```bash
+    # For self-hosted installations
+    sudo chown -R www-data:www-data storage/ bootstrap/cache/
+    sudo chmod -R 775 storage/ bootstrap/cache/
+    ```
+  </Accordion>
+
+  <Accordion icon="clock" title="Set up automated tasks">
+    Firefly III needs a cron job for recurring transactions and maintenance:
+
+    **For Docker:**
+    The cron job runs automatically in the container.
+
+    **For self-hosted:**
+    Add this to your crontab:
+    ```bash
+    # Run every day at 3 AM
+    0 3 * * * cd /var/www/firefly-iii && php artisan schedule:run >> /dev/null 2>&1
+    ```
+
+    Or use the static cron token:
+    ```bash
+    0 3 * * * curl https://your-firefly-url/cron/[YOUR_TOKEN] >> /dev/null 2>&1
+    ```
+  </Accordion>
+
+  <Accordion icon="database" title="Configure backups">
+    **Database backups:**
+    ```bash
+    # MySQL
+    mysqldump -u firefly -p firefly > firefly-backup-$(date +%Y%m%d).sql
+
+    # PostgreSQL
+    pg_dump -U firefly firefly > firefly-backup-$(date +%Y%m%d).sql
+    ```
+
+    **Docker volume backups:**
+    ```bash
+    docker-compose down
+    docker run --rm -v firefly_iii_db:/data -v $(pwd):/backup \
+      ubuntu tar czf /backup/firefly-db-backup.tar.gz /data
+    docker-compose up -d
+    ```
+
+    <Warning>
+      Test your backups regularly. A backup you can't restore is useless!
+    </Warning>
+  </Accordion>
+</AccordionGroup>
+
+## Updating Firefly III
+
+### Docker updates
+
+```bash
+# Pull the latest image
+docker-compose pull
+
+# Restart with new image
+docker-compose up -d
+```
+
+### Self-hosted updates
+
+```bash
+# Back up first!
+mysqldump -u firefly -p firefly > backup-before-update.sql
+
+# Update code
+git pull
+composer install --no-dev
+
+# Run migrations
+php artisan migrate
+php artisan cache:clear
+php artisan view:clear
+```
+
+<Card
+  title="Configuration guide"
+  icon="gear"
+  href="/installation/configuration"
+>
+  Learn about all available configuration options and advanced settings.
+</Card>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="White screen or 500 error">
+    1. Check PHP error logs
+    2. Verify file permissions on `storage/` and `bootstrap/cache/`
+    3. Ensure all PHP extensions are installed
+    4. Run `php artisan config:clear` and `php artisan cache:clear`
+  </Accordion>
+
+  <Accordion title="Database connection failed">
+    1. Verify database credentials in `.env`
+    2. Check database server is running
+    3. Ensure database exists: `CREATE DATABASE firefly;`
+    4. Test connection: `mysql -u firefly -p -h localhost firefly`
+  </Accordion>
+
+  <Accordion title="Docker container won't start">
+    1. Check logs: `docker-compose logs firefly_iii_app`
+    2. Verify port is not already in use
+    3. Ensure `.env` file has `APP_KEY` set
+    4. Wait for database initialization (can take 60 seconds)
+  </Accordion>
+
+  <Accordion title="Can't log in after installation">
+    1. Clear browser cache and cookies
+    2. Check session driver in `.env` (use `file` for simple setups)
+    3. Verify permissions on `storage/framework/sessions/`
+    4. Create new user: `php artisan firefly-iii:create-user`
+  </Accordion>
+</AccordionGroup>
+
+<Card
+  title="Need more help?"
+  icon="life-ring"
+  href="/admin/troubleshooting"
+>
+  Visit the troubleshooting guide for more solutions and debugging tips.
+</Card>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Quick start guide"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Set up your first account and transaction
+  </Card>
+  <Card
+    title="Import data"
+    icon="file-import"
+    href="/advanced/data-import"
+  >
+    Import existing financial data from your bank
+  </Card>
+  <Card
+    title="API access"
+    icon="key"
+    href="/api/overview"
+  >
+    Generate API tokens for integrations
+  </Card>
+  <Card
+    title="Security setup"
+    icon="shield"
+    href="/admin/security"
+  >
+    Configure 2FA and security settings
+  </Card>
+</CardGroup>

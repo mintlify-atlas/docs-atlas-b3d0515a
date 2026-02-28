@@ -1,0 +1,343 @@
+---
+title: API Authentication
+description: Authenticate API requests using OAuth2 with Laravel Passport
+---
+
+Firefly III uses **OAuth2** authentication powered by Laravel Passport to secure API access.
+
+## Authentication Method
+
+All API requests (except `/api/v1/cron/{cliToken}`) require authentication using OAuth2 bearer tokens.
+
+### Bearer Token Authentication
+
+Include your access token in the `Authorization` header:
+
+<CodeGroup>
+```bash Bearer Token
+curl -X GET "https://your-firefly-instance.com/api/v1/accounts" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+## OAuth2 with Laravel Passport
+
+Firefly III implements OAuth2 using [Laravel Passport](https://laravel.com/docs/passport).
+
+### Supported Grant Types
+
+1. **Personal Access Tokens** - For user-owned API clients
+2. **Authorization Code Grant** - For third-party applications
+3. **Client Credentials Grant** - For machine-to-machine authentication
+
+## Personal Access Tokens
+
+The easiest way to access the API is through Personal Access Tokens.
+
+### Creating a Personal Access Token
+
+1. Log in to your Firefly III web interface
+2. Navigate to **Options** > **Profile** > **OAuth**
+3. Click **Create New Token**
+4. Give your token a name (e.g., "Mobile App")
+5. Click **Create**
+6. Copy the generated token immediately (it won't be shown again)
+
+<Warning>
+Store your access token securely. It provides full access to your Firefly III account and cannot be retrieved after creation.
+</Warning>
+
+### Using Personal Access Tokens
+
+<CodeGroup>
+```bash Example Request
+curl -X GET "https://your-firefly-instance.com/api/v1/transactions" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGc..."
+```
+
+```python Python Example
+import requests
+
+token = "eyJ0eXAiOiJKV1QiLCJhbGc..."
+headers = {
+    "Accept": "application/json",
+    "Authorization": f"Bearer {token}"
+}
+
+response = requests.get(
+    "https://your-firefly-instance.com/api/v1/transactions",
+    headers=headers
+)
+
+print(response.json())
+```
+
+```javascript JavaScript Example
+const token = "eyJ0eXAiOiJKV1QiLCJhbGc...";
+
+fetch("https://your-firefly-instance.com/api/v1/transactions", {
+  headers: {
+    "Accept": "application/json",
+    "Authorization": `Bearer ${token}`
+  }
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+</CodeGroup>
+
+## OAuth2 Authorization Code Flow
+
+For third-party applications that need to access user data.
+
+### Step 1: Register Your Application
+
+1. Log in to Firefly III
+2. Go to **Options** > **Profile** > **OAuth**
+3. Click **Create New Client**
+4. Enter your application name and redirect URL
+5. Save the Client ID and Client Secret
+
+### Step 2: Authorization Request
+
+Redirect users to the authorization endpoint:
+
+```
+GET /oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope=*
+```
+
+<ParamField query="client_id" type="string" required>
+  Your OAuth client ID
+</ParamField>
+
+<ParamField query="redirect_uri" type="string" required>
+  The callback URL registered with your client
+</ParamField>
+
+<ParamField query="response_type" type="string" required>
+  Must be `code` for authorization code flow
+</ParamField>
+
+<ParamField query="scope" type="string">
+  Requested scopes (use `*` for full access)
+</ParamField>
+
+<ParamField query="state" type="string">
+  CSRF protection token (recommended)
+</ParamField>
+
+### Step 3: Exchange Code for Token
+
+After user authorization, exchange the authorization code for an access token:
+
+<CodeGroup>
+```bash Token Request
+curl -X POST "https://your-firefly-instance.com/oauth/token" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "grant_type": "authorization_code",
+    "client_id": "your-client-id",
+    "client_secret": "your-client-secret",
+    "redirect_uri": "https://your-app.com/callback",
+    "code": "authorization-code-from-redirect"
+  }'
+```
+
+```json Token Response
+{
+  "token_type": "Bearer",
+  "expires_in": 31536000,
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+  "refresh_token": "def502004f1e4e5f..."
+}
+```
+</CodeGroup>
+
+<ResponseField name="access_token" type="string">
+  The bearer token to use in API requests
+</ResponseField>
+
+<ResponseField name="refresh_token" type="string">
+  Token to obtain a new access token when expired
+</ResponseField>
+
+<ResponseField name="expires_in" type="integer">
+  Access token lifetime in seconds (default: 1 year)
+</ResponseField>
+
+<ResponseField name="token_type" type="string">
+  Always "Bearer"
+</ResponseField>
+
+## Refreshing Access Tokens
+
+Use the refresh token to obtain a new access token:
+
+<CodeGroup>
+```bash Refresh Token
+curl -X POST "https://your-firefly-instance.com/oauth/token" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "grant_type": "refresh_token",
+    "refresh_token": "your-refresh-token",
+    "client_id": "your-client-id",
+    "client_secret": "your-client-secret",
+    "scope": "*"
+  }'
+```
+</CodeGroup>
+
+## Client Credentials Grant
+
+For machine-to-machine authentication without user interaction.
+
+<CodeGroup>
+```bash Client Credentials
+curl -X POST "https://your-firefly-instance.com/oauth/token" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "grant_type": "client_credentials",
+    "client_id": "your-client-id",
+    "client_secret": "your-client-secret",
+    "scope": "*"
+  }'
+```
+</CodeGroup>
+
+## OAuth2 Scopes
+
+Firefly III currently uses a single scope:
+
+<ParamField query="*" type="scope">
+  Full access to all API endpoints and user data
+</ParamField>
+
+<Info>
+Future versions of Firefly III may implement granular scopes for fine-grained access control.
+</Info>
+
+## Authentication Guard
+
+The API uses the authentication guard configured in your environment:
+
+```bash
+AUTHENTICATION_GUARD=web
+```
+
+This is configured in `config/passport.php` and defaults to the `web` guard.
+
+## Encryption Keys
+
+Passport uses RSA encryption keys for signing tokens. These are automatically generated during installation.
+
+### Custom Keys (Optional)
+
+You can provide custom encryption keys via environment variables:
+
+```bash
+PASSPORT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----..."
+PASSPORT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----..."
+```
+
+## Security Best Practices
+
+<Warning>
+**Never expose your tokens in client-side code or public repositories.**
+</Warning>
+
+1. **Store tokens securely** - Use secure storage mechanisms (keychain, encrypted storage)
+2. **Use HTTPS only** - Never transmit tokens over unencrypted connections
+3. **Rotate tokens regularly** - Revoke and recreate tokens periodically
+4. **Implement token expiration** - Use refresh tokens for long-lived applications
+5. **Use state parameter** - Protect against CSRF attacks in OAuth flows
+
+## Revoking Tokens
+
+Revoke access tokens through the Firefly III web interface:
+
+1. Navigate to **Options** > **Profile** > **OAuth**
+2. Find the token or client to revoke
+3. Click **Revoke** or **Delete**
+
+## Unauthenticated Endpoints
+
+The following endpoint does not require authentication:
+
+- `GET /api/v1/cron/{cliToken}` - Cron endpoint using CLI token instead of OAuth
+
+<Info>
+The cron endpoint uses a different authentication method (CLI token) for scheduled tasks.
+</Info>
+
+## Testing Authentication
+
+Verify your authentication is working:
+
+<CodeGroup>
+```bash Test Authentication
+curl -X GET "https://your-firefly-instance.com/api/v1/about/user" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Success Response
+{
+  "data": {
+    "type": "users",
+    "id": "1",
+    "attributes": {
+      "email": "user@example.com",
+      "created_at": "2024-01-01T00:00:00+00:00",
+      "updated_at": "2024-01-01T00:00:00+00:00"
+    }
+  }
+}
+```
+</CodeGroup>
+
+## Common Authentication Errors
+
+### 401 Unauthorized
+
+```json
+{
+  "message": "Unauthenticated."
+}
+```
+
+**Causes:**
+- Missing Authorization header
+- Invalid or expired token
+- Malformed bearer token
+
+**Solution:** Verify your token is correct and properly formatted in the Authorization header.
+
+### 403 Forbidden
+
+```json
+{
+  "message": "This action is unauthorized."
+}
+```
+
+**Causes:**
+- Insufficient permissions for the requested action
+- Admin-only endpoint accessed by regular user
+
+**Solution:** Ensure your user account has the necessary permissions.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Overview" icon="book" href="/api/overview">
+    Learn about API basics and response formats
+  </Card>
+  <Card title="Search API" icon="magnifying-glass" href="/api/search">
+    Search transactions and accounts
+  </Card>
+</CardGroup>

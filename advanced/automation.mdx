@@ -1,0 +1,390 @@
+---
+title: Automation
+description: Automate financial tasks and workflows in Firefly III
+---
+
+Firefly III provides powerful automation features to reduce manual data entry and streamline your financial management workflows.
+
+## Automation overview
+
+Firefly III offers several automation mechanisms:
+
+<CardGroup cols={2}>
+  <Card title="Rules" icon="gears" href="/features/rules">
+    Automatically modify transactions based on triggers
+  </Card>
+  <Card title="Recurring transactions" icon="rotate" href="/features/recurring-transactions">
+    Automatically create repeated transactions
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/advanced/webhooks">
+    Trigger external services on events
+  </Card>
+  <Card title="Cron jobs" icon="clock" href="#cron-jobs">
+    Schedule automated tasks
+  </Card>
+</CardGroup>
+
+## Rule-based automation
+
+Rules automatically process transactions based on triggers and actions. Rules are powerful for:
+
+- Auto-categorizing transactions
+- Setting budgets automatically
+- Adding tags based on patterns
+- Modifying descriptions
+- Converting transaction types
+
+### Rule execution
+
+Rules can execute:
+
+<Tabs>
+  <Tab title="On import">
+    Automatically applied when importing transactions from external sources
+  </Tab>
+  
+  <Tab title="On manual entry">
+    Triggered when you manually create or edit transactions
+  </Tab>
+  
+  <Tab title="Manually">
+    Run rules on existing transactions on demand
+  </Tab>
+</Tabs>
+
+<Info>For detailed information about creating and managing rules, see [Rules documentation](/features/rules)</Info>
+
+## Recurring transaction automation
+
+Recurring transactions automate the creation of repeating transactions like:
+
+- Salary deposits
+- Rent payments
+- Subscription fees
+- Bill payments
+
+### Recurrence patterns
+
+Supported recurrence patterns include:
+
+- **Daily**: Every N days
+- **Weekly**: Every N weeks on specific days
+- **Monthly**: Every N months on specific dates
+- **Yearly**: Every N years on specific dates
+- **nth weekday**: E.g., "first Monday of each month"
+
+### Execution timing
+
+Recurring transactions are processed:
+
+1. **Via cron**: Automatically when cron job runs (recommended)
+2. **On demand**: Manually trigger via web interface
+3. **Via API**: Programmatically trigger creation
+
+<Note>Recurring transactions are created slightly ahead of their due date to ensure they appear in your records on time</Note>
+
+<Info>Learn more in [Recurring Transactions documentation](/features/recurring-transactions)</Info>
+
+## Cron jobs
+
+Firefly III uses scheduled tasks (cron jobs) to automate background processes.
+
+### Required cron job
+
+For full automation, set up this cron job:
+
+<CodeGroup>
+```bash Docker
+# Already configured in Docker containers
+# Runs every hour automatically
+```
+
+```bash Self-hosted
+# Add to crontab (crontab -e)
+0 * * * * cd /var/www/firefly-iii && php artisan schedule:run >> /dev/null 2>&1
+```
+
+```bash Kubernetes
+# Use CronJob resource
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: firefly-iii-cron
+spec:
+  schedule: "0 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: firefly-iii
+            image: fireflyiii/core:latest
+            command:
+            - php
+            - artisan
+            - schedule:run
+          restartPolicy: OnFailure
+```
+</CodeGroup>
+
+### Automated tasks
+
+The cron job handles:
+
+<AccordionGroup>
+  <Accordion title="Recurring transactions">
+    Creates new transactions from active recurrences based on their schedule
+  </Accordion>
+  
+  <Accordion title="Bill matching">
+    Matches transactions to bills automatically based on amount and description patterns
+  </Accordion>
+  
+  <Accordion title="Webhook delivery">
+    Retries failed webhook deliveries
+  </Accordion>
+  
+  <Accordion title="Exchange rate updates">
+    Fetches current exchange rates if configured
+  </Accordion>
+  
+  <Accordion title="Telemetry collection">
+    Collects anonymous usage statistics if enabled
+  </Accordion>
+  
+  <Accordion title="Cache cleanup">
+    Clears expired cache entries
+  </Accordion>
+</AccordionGroup>
+
+### Manual execution
+
+You can manually run scheduled tasks:
+
+```bash
+php artisan schedule:run
+```
+
+Or trigger specific tasks:
+
+```bash
+# Process recurring transactions
+php artisan firefly-iii:create-recurring-transactions
+
+# Match bills
+php artisan firefly-iii:match-bills
+```
+
+<Tip>Use manual execution for testing or troubleshooting before setting up cron</Tip>
+
+## Import automation
+
+While Firefly III itself doesn't import from banks automatically, you can use external tools:
+
+### Data Importer
+
+The official [Firefly III Data Importer](https://github.com/firefly-iii/data-importer) can:
+
+- Import from bank CSV files
+- Connect to bank APIs (via Salt Edge or Nordigen)
+- Import from other Firefly III instances
+- Schedule automatic imports
+
+### Third-party tools
+
+Community tools for automation:
+
+- **plaid2ff3**: Import from Plaid
+- **ynab-to-firefly**: Migrate from YNAB
+- **nordigen-firefly**: Direct Nordigen integration
+- **saltedge-firefly**: Salt Edge integration
+
+<Info>See the [data import documentation](/advanced/data-import) for more details</Info>
+
+## API automation
+
+You can build custom automation using the Firefly III API:
+
+### Common automation patterns
+
+<Tabs>
+  <Tab title="Transaction creation">
+    ```bash
+    # Automatically create transactions from external events
+    curl -X POST "https://your-firefly.local/api/v1/transactions" \
+      -H "Authorization: Bearer YOUR_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "transactions": [{
+          "type": "withdrawal",
+          "date": "2024-01-01",
+          "amount": "50.00",
+          "description": "Automated transaction",
+          "source_name": "Checking Account",
+          "destination_name": "Groceries"
+        }]
+      }'
+    ```
+  </Tab>
+  
+  <Tab title="Budget monitoring">
+    ```bash
+    # Check budget spending and trigger alerts
+    curl -X GET "https://your-firefly.local/api/v1/budgets/1/limits" \
+      -H "Authorization: Bearer YOUR_TOKEN"
+    
+    # Process response and send alert if over budget
+    ```
+  </Tab>
+  
+  <Tab title="Report generation">
+    ```bash
+    # Generate automated reports
+    curl -X GET "https://your-firefly.local/api/v1/insight/expense/total?start=2024-01-01&end=2024-01-31" \
+      -H "Authorization: Bearer YOUR_TOKEN"
+    ```
+  </Tab>
+</Tabs>
+
+<Info>See the [API documentation](/api/overview) for complete endpoint reference</Info>
+
+## Best practices
+
+<AccordionGroup>
+  <Accordion title="Test automation first">
+    Always test automation rules and scripts on a small dataset before applying to all transactions. Use rule testing features and backup your database.
+  </Accordion>
+  
+  <Accordion title="Monitor automated processes">
+    Regularly check:
+    - Rule execution logs
+    - Recurring transaction creation
+    - Webhook delivery status
+    - Cron job execution logs
+  </Accordion>
+  
+  <Accordion title="Use rule groups strategically">
+    Organize rules into groups by purpose:
+    - Import rules (run first)
+    - Categorization rules
+    - Cleanup rules (run last)
+  </Accordion>
+  
+  <Accordion title="Keep rules simple">
+    Create multiple simple rules rather than few complex ones. This makes debugging easier and improves performance.
+  </Accordion>
+  
+  <Accordion title="Document your automation">
+    Use descriptive rule names and add notes about what each automation does and why.
+  </Accordion>
+  
+  <Accordion title="Review periodically">
+    Quarterly review of:
+    - Rule effectiveness
+    - Recurring transaction accuracy
+    - Automation performance
+    - Unused or redundant rules
+  </Accordion>
+</AccordionGroup>
+
+## Advanced automation scenarios
+
+### Multi-stage processing
+
+Combine multiple automation features:
+
+<Steps>
+  <Step title="Import transactions">
+    Use Data Importer to fetch bank transactions automatically
+  </Step>
+  
+  <Step title="Apply rules">
+    Rules automatically categorize and tag imported transactions
+  </Step>
+  
+  <Step title="Trigger webhooks">
+    Webhooks notify external services of new transactions
+  </Step>
+  
+  <Step title="Generate alerts">
+    External service checks budgets and sends alerts if needed
+  </Step>
+</Steps>
+
+### Conditional processing
+
+Use rule conditions for smart automation:
+
+- Apply different categories based on amount ranges
+- Set budgets only for specific account types
+- Add tags based on time of day or day of week
+- Convert transaction types based on source/destination
+
+### Integration with external tools
+
+<CardGroup cols={2}>
+  <Card title="Zapier/n8n" icon="bolt">
+    Connect Firefly III to 1000+ services using workflow automation platforms
+  </Card>
+  <Card title="Home Assistant" icon="home">
+    Integrate with smart home for location-based expense tracking
+  </Card>
+  <Card title="IFTTT" icon="shuffle">
+    Create simple if-this-then-that automations
+  </Card>
+  <Card title="Custom scripts" icon="code">
+    Build Python/Node.js scripts using the API
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<Accordion title="Cron not running">
+  **Problem**: Scheduled tasks aren't executing
+  
+  **Solutions**:
+  - Check cron is installed and running: `systemctl status cron`
+  - Verify crontab entry: `crontab -l`
+  - Check logs: `grep CRON /var/log/syslog`
+  - Ensure PHP CLI is available
+  - Check file permissions on artisan file
+</Accordion>
+
+<Accordion title="Rules not applying">
+  **Problem**: Rules aren't processing transactions
+  
+  **Solutions**:
+  - Verify rule is active
+  - Check "Apply rules" is enabled in preferences
+  - Test rule with rule tester
+  - Review rule execution order
+  - Check for conflicting rules
+</Accordion>
+
+<Accordion title="Recurring transactions not created">
+  **Problem**: Recurring transactions aren't being generated
+  
+  **Solutions**:
+  - Check recurrence is active
+  - Verify next expected run date
+  - Ensure cron job is running
+  - Check for errors in logs
+  - Manually trigger to test: `php artisan firefly-iii:create-recurring-transactions`
+</Accordion>
+
+## Related documentation
+
+<CardGroup cols={2}>
+  <Card title="Rules" icon="gears" href="/features/rules">
+    Detailed rule configuration
+  </Card>
+  <Card title="Recurring transactions" icon="rotate" href="/features/recurring-transactions">
+    Set up repeating transactions
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/advanced/webhooks">
+    External integrations
+  </Card>
+  <Card title="API" icon="code" href="/api/overview">
+    Build custom automation
+  </Card>
+</CardGroup>

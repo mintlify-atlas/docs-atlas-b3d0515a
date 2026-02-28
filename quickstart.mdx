@@ -1,80 +1,347 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick start guide
+description: Get Firefly III running and track your first transaction in under 10 minutes
 ---
 
 ## Get started in three steps
 
-Get your documentation site running locally and make your first customization.
+This guide will help you set up Firefly III, create your first account, and record your first transaction. By the end, you'll understand the basics of tracking your finances.
 
-### Step 1: Set up your local environment
+<Note>
+  This quickstart uses Docker for the simplest setup experience. For other installation methods, see the [installation guide](/installation).
+</Note>
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+<Steps>
+  <Step title="Install Firefly III with Docker">
+    The fastest way to get started is with Docker. Make sure you have Docker installed on your system.
 
-### Step 2: Deploy your changes
+    Create a `docker-compose.yml` file:
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    ```yaml docker-compose.yml
+    version: '3.3'
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    services:
+      firefly_iii_app:
+        image: fireflyiii/core:latest
+        restart: always
+        volumes:
+          - firefly_iii_upload:/var/www/html/storage/upload
+        env_file: .env
+        ports:
+          - 80:8080
+        depends_on:
+          - firefly_iii_db
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+      firefly_iii_db:
+        image: mariadb:latest
+        restart: always
+        environment:
+          - MYSQL_RANDOM_ROOT_PASSWORD=yes
+          - MYSQL_USER=firefly
+          - MYSQL_PASSWORD=secret_firefly_password
+          - MYSQL_DATABASE=firefly
+        volumes:
+          - firefly_iii_db:/var/lib/mysql
 
-### Step 3: Go live
+    volumes:
+      firefly_iii_upload:
+      firefly_iii_db:
+    ```
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    Create a `.env` file with your configuration:
+
+    ```bash .env
+    # You can leave this on "local". If you change it to production most console commands will ask for extra confirmation.
+    APP_ENV=production
+
+    # Set to false if you want to see debug information in error screens.
+    APP_DEBUG=false
+
+    # This should be your email address
+    SITE_OWNER=mail@example.com
+
+    # The encryption key for your sessions. Keep this very secure.
+    # Generate with: head /dev/urandom | LC_ALL=C tr -dc 'A-Za-z0-9' | head -c 32 && echo
+    APP_KEY=SomeRandomStringOf32CharsExactly
+
+    # The default language
+    DEFAULT_LANGUAGE=en_US
+
+    # Your timezone
+    TZ=Europe/Amsterdam
+
+    # Database credentials - must match docker-compose.yml
+    DB_CONNECTION=mysql
+    DB_HOST=firefly_iii_db
+    DB_PORT=3306
+    DB_DATABASE=firefly
+    DB_USERNAME=firefly
+    DB_PASSWORD=secret_firefly_password
+
+    # Application URL
+    APP_URL=http://localhost
+    ```
+
+    <Warning>
+      **Important**: Change `APP_KEY` to a random 32-character string. You can generate one with:
+      ```bash
+      head /dev/urandom | LC_ALL=C tr -dc 'A-Za-z0-9' | head -c 32 && echo
+      ```
+    </Warning>
+
+    Start Firefly III:
+
+    ```bash
+    docker-compose up -d
+    ```
+
+    Wait about 30 seconds for the database to initialize, then open http://localhost in your browser.
+
+    <Tip>
+      The first time you start Firefly III, it will set up the database and create the necessary tables. This may take a minute.
+    </Tip>
+  </Step>
+
+  <Step title="Create your first account and transaction">
+    After logging in to Firefly III, you'll see the dashboard. Let's set up your first financial account and record a transaction.
+
+    ### Register your account
+
+    When you first access Firefly III, you'll be prompted to create an account. Choose a username and password.
+
+    <Info>
+      If you're using 2FA (recommended), you'll be asked to scan a QR code with your authenticator app.
+    </Info>
+
+    ### Create an asset account
+
+    1. Navigate to **Accounts** > **Asset accounts** in the top menu
+    2. Click **Create new asset account**
+    3. Fill in the details:
+       - **Name**: Your checking account name (e.g., "Main Checking")
+       - **Account type**: Select "Default account"
+       - **Account number**: Your actual account number (optional)
+       - **IBAN**: Your IBAN if applicable (optional)
+       - **Opening balance**: The current balance in your account
+       - **Opening balance date**: Today's date
+    4. Click **Submit**
+
+    <Tip>
+      Start with one account to keep things simple. You can add more accounts (savings, credit cards, cash) later.
+    </Tip>
+
+    ### Record your first transaction
+
+    Now let's record an expense:
+
+    1. Click **Create transaction** (or press `Ctrl+N`)
+    2. Choose **Withdrawal** (an expense)
+    3. Fill in the transaction details:
+       - **Description**: What you spent money on (e.g., "Groceries at Supermarket")
+       - **Amount**: The amount you spent
+       - **Source account**: Select your checking account
+       - **Destination account**: Type the store name (e.g., "Supermarket") - Firefly III will create this expense account automatically
+       - **Date**: When the transaction occurred
+       - **Category**: Optional but helpful (e.g., "Groceries")
+       - **Budget**: Optional - we'll set this up later
+    4. Click **Submit**
+
+    <Note>
+      Firefly III uses double-entry bookkeeping. Every transaction has a **source** (where money comes from) and a **destination** (where it goes to).
+    </Note>
+
+    ### Transaction types
+
+    Firefly III supports three main transaction types:
+
+    <CardGroup cols={3}>
+      <Card title="Withdrawal" icon="arrow-right">
+        Money leaving your accounts (expenses like groceries, bills, shopping)
+      </Card>
+      <Card title="Deposit" icon="arrow-left">
+        Money entering your accounts (income like salary, gifts, refunds)
+      </Card>
+      <Card title="Transfer" icon="arrows-left-right">
+        Money moving between your own accounts (checking to savings)
+      </Card>
+    </CardGroup>
+  </Step>
+
+  <Step title="Explore the dashboard and features">
+    After creating your first transaction, return to the dashboard to see your financial overview.
+
+    ### Dashboard overview
+
+    The dashboard shows:
+    - **Account balances**: Current balances of all your accounts
+    - **Recent transactions**: Your latest income and expenses
+    - **Budget status**: How much you've spent vs. your budget (if set)
+    - **Bill reminders**: Upcoming bills you need to pay
+    - **Piggy banks**: Progress toward your savings goals
+
+    ### Set up a budget
+
+    Budgets help you control spending:
+
+    1. Go to **Budgets** in the top menu
+    2. Click **Create a budget**
+    3. Enter a budget name (e.g., "Groceries")
+    4. Set a budget amount for the current month
+    5. Click **Submit**
+
+    Now when you create transactions, you can assign them to budgets to track your spending.
+
+    ### Create a recurring transaction
+
+    For expenses that repeat (like rent or subscriptions):
+
+    1. Navigate to **Recurring transactions**
+    2. Click **Create a recurring transaction**
+    3. Set up the pattern:
+       - **Description**: What the transaction is for
+       - **Amount**: How much
+       - **First date**: When it starts
+       - **Repeat**: How often (daily, weekly, monthly, yearly)
+       - **Repetitions**: How many times (or leave empty for indefinite)
+    4. Click **Submit**
+
+    Firefly III will automatically create these transactions on schedule.
+
+    <Tip>
+      Set up recurring transactions for your salary, rent, subscriptions, and regular bills to automate your bookkeeping.
+    </Tip>
+  </Step>
+</Steps>
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
+Now that you have Firefly III running and understand the basics, explore these features:
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card
+    title="Manage accounts"
+    icon="landmark"
+    href="/features/accounts"
+  >
+    Learn about different account types and how to organize them
+  </Card>
+  <Card
+    title="Master transactions"
+    icon="money-bill-transfer"
+    href="/features/transactions"
+  >
+    Deep dive into transaction management and bulk operations
+  </Card>
+  <Card
+    title="Set up budgets"
+    icon="wallet"
+    href="/features/budgets"
+  >
+    Control your spending with monthly and annual budgets
+  </Card>
+  <Card
+    title="Create rules"
+    icon="gavel"
+    href="/features/rules"
+  >
+    Automate transaction categorization with powerful rules
+  </Card>
+  <Card
+    title="Track bills"
+    icon="file-invoice"
+    href="/features/bills"
+  >
+    Set up bill tracking to never miss a payment
+  </Card>
+  <Card
+    title="Generate reports"
+    icon="chart-bar"
+    href="/features/reports"
+  >
+    Analyze your finances with detailed reports and charts
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## Import existing data
+
+If you have existing financial data to import:
+
+<CardGroup cols={2}>
+  <Card
+    title="CSV import"
+    icon="file-csv"
+    href="/advanced/data-import"
+  >
+    Import transactions from CSV files exported from your bank
+  </Card>
+  <Card
+    title="Data importer"
+    icon="download"
+    href="https://github.com/firefly-iii/data-importer"
+  >
+    Use the official data importer for automated imports
+  </Card>
+</CardGroup>
+
+## Keyboard shortcuts
+
+Speed up your workflow with these shortcuts:
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+N` | Create new transaction |
+| `Ctrl+Alt+T` | Jump to search |
+| `/` | Focus search box |
+
+## Common questions
+
+<AccordionGroup>
+  <Accordion title="How do I change my password?">
+    Go to **Options** > **Profile** and click **Change password**. You'll need to enter your current password and the new password twice.
+  </Accordion>
+
+  <Accordion title="Can I use multiple currencies?">
+    Yes! Firefly III supports any currency. Go to **Options** > **Currencies** to enable additional currencies. Each transaction can have a foreign currency amount.
+  </Accordion>
+
+  <Accordion title="How do I back up my data?">
+    Your data is stored in the database. Back up the database regularly using your database system's backup tools. For Docker, also back up the volume data.
+  </Accordion>
+
+  <Accordion title="Can I access Firefly III from my phone?">
+    Yes! The web interface is mobile-friendly. There are also community-built mobile apps available. Check the ecosystem page for links.
+  </Accordion>
+</AccordionGroup>
+
+## Need help?
+
+<CardGroup cols={2}>
+  <Card
+    title="Documentation"
+    icon="book"
+    href="/features/accounts"
+  >
+    Read the full documentation for detailed guides
+  </Card>
+  <Card
+    title="Community support"
+    icon="users"
+    href="https://github.com/firefly-iii/firefly-iii/discussions"
+  >
+    Ask questions in GitHub Discussions
+  </Card>
+  <Card
+    title="Report bugs"
+    icon="bug"
+    href="https://github.com/firefly-iii/firefly-iii/issues"
+  >
+    Found an issue? Let us know on GitHub
+  </Card>
+  <Card
+    title="Live chat"
+    icon="message"
+    href="https://gitter.im/firefly-iii/firefly-iii"
+  >
+    Get quick answers on Gitter
+  </Card>
+</CardGroup>

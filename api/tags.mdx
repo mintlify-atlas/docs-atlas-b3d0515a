@@ -1,0 +1,283 @@
+---
+title: Tags API
+description: Label and organize transactions with flexible tags
+---
+
+## Overview
+
+The Tags API allows you to create and manage tags for organizing transactions. Tags provide a flexible way to label transactions with multiple attributes, making it easy to filter and analyze your financial data.
+
+## List All Tags
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/tags" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/tags`
+
+### Query Parameters
+
+<ParamField query="page" type="integer">
+  Page number for pagination
+</ParamField>
+
+### Response Fields
+
+<ResponseField name="id" type="integer">
+  Tag ID
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of creation
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp of last update
+</ResponseField>
+
+<ResponseField name="tag" type="string">
+  Tag name/text
+</ResponseField>
+
+<ResponseField name="date" type="string">
+  Optional date associated with tag (YYYY-MM-DD)
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Tag description
+</ResponseField>
+
+<ResponseField name="latitude" type="number">
+  Geographic latitude
+</ResponseField>
+
+<ResponseField name="longitude" type="number">
+  Geographic longitude
+</ResponseField>
+
+<ResponseField name="zoom_level" type="integer">
+  Map zoom level
+</ResponseField>
+
+## Create Tag
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://demo.firefly-iii.org/api/v1/tags" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tag": "vacation-2024",
+    "date": "2024-07-01",
+    "description": "Summer vacation expenses",
+    "latitude": 40.7128,
+    "longitude": -74.0060,
+    "zoom_level": 10
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `POST /v1/tags`
+
+### Request Body
+
+<ParamField body="tag" type="string" required>
+  Tag name (1-1024 characters, must be unique)
+</ParamField>
+
+<ParamField body="description" type="string">
+  Tag description (1-32,768 characters)
+</ParamField>
+
+<ParamField body="date" type="string">
+  Date associated with tag (YYYY-MM-DD, after 1970-01-02, before 2038-01-17)
+</ParamField>
+
+<ParamField body="latitude" type="number">
+  Geographic latitude (-90 to 90)
+</ParamField>
+
+<ParamField body="longitude" type="number">
+  Geographic longitude (-180 to 180)
+</ParamField>
+
+<ParamField body="zoom_level" type="integer">
+  Map zoom level (0-80)
+</ParamField>
+
+<Info>
+**Location Support:**
+
+Tags support location information, making them useful for tracking expenses by place. This is particularly helpful for:
+- Travel expenses
+- Business trips
+- Location-based spending analysis
+</Info>
+
+## Get Tag by ID
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/tags/{tagOrId}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/tags/{tagOrId}`
+
+You can use either the tag ID (integer) or tag name (string) in the URL.
+
+### Examples
+
+- `GET /v1/tags/42` - Get tag by ID
+- `GET /v1/tags/vacation-2024` - Get tag by name
+
+## Update Tag
+
+<CodeGroup>
+```bash cURL
+curl -X PUT "https://demo.firefly-iii.org/api/v1/tags/{tagOrId}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tag": "vacation-2024-europe",
+    "description": "European vacation expenses"
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `PUT /v1/tags/{tagOrId}`
+
+Accepts the same parameters as Create Tag. All fields are optional.
+
+## Delete Tag
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE "https://demo.firefly-iii.org/api/v1/tags/{tagOrId}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `DELETE /v1/tags/{tagOrId}`
+
+Deletes the tag. Transactions with this tag will have it removed.
+
+<Warning>
+Deleting a tag removes it from all transactions but does not delete the transactions themselves.
+</Warning>
+
+## Related Endpoints
+
+### Get Tag Transactions
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/tags/{tagOrId}/transactions" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/tags/{tagOrId}/transactions`
+
+Returns all transactions associated with this tag.
+
+#### Query Parameters
+
+<ParamField query="page" type="integer">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="start" type="string">
+  Start date filter (YYYY-MM-DD)
+</ParamField>
+
+<ParamField query="end" type="string">
+  End date filter (YYYY-MM-DD)
+</ParamField>
+
+<ParamField query="type" type="string">
+  Transaction type filter: `withdrawal`, `deposit`, `transfer`
+</ParamField>
+
+### Get Tag Attachments
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/tags/{tagOrId}/attachments" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/tags/{tagOrId}/attachments`
+
+Returns all attachments associated with this tag.
+
+## Best Practices
+
+### Tag Naming Conventions
+
+1. **Use lowercase with hyphens**: `vacation-2024`, `business-trip`, `client-acme`
+
+2. **Be descriptive but concise**: Tags should be easy to read and understand at a glance
+
+3. **Use categories for broad classification**: Reserve tags for specific attributes or projects
+
+### Common Tag Uses
+
+**Projects and Events:**
+- `home-renovation`
+- `wedding-planning`
+- `vacation-japan-2024`
+
+**Tax and Accounting:**
+- `tax-deductible`
+- `business-expense`
+- `reimbursable`
+
+**People or Entities:**
+- `client-acme-corp`
+- `gift-for-mom`
+- `shared-with-roommate`
+
+**Status or Workflow:**
+- `pending-reimbursement`
+- `needs-review`
+- `personal`
+- `work`
+
+### Multiple Tags
+
+Transactions can have multiple tags. Use this to create flexible classification systems:
+
+```json
+{
+  "tags": [
+    "business-expense",
+    "tax-deductible",
+    "client-acme",
+    "q1-2024"
+  ]
+}
+```
+
+### Tags vs Categories vs Budgets
+
+- **Categories**: Broad classification (what type of expense)
+- **Budgets**: Financial planning (how much to spend)
+- **Tags**: Flexible attributes (additional context)
+
+Example transaction:
+- **Category**: Travel
+- **Budget**: Vacation
+- **Tags**: `japan-2024`, `business-trip`, `reimbursable`

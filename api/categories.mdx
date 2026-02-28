@@ -1,0 +1,271 @@
+---
+title: Categories API
+description: Organize transactions with categories
+---
+
+## Overview
+
+The Categories API allows you to create and manage categories for organizing your transactions. Categories help you group similar types of income and expenses for better financial insights.
+
+## List All Categories
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/categories" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/categories`
+
+### Query Parameters
+
+<ParamField query="page" type="integer">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="start" type="string">
+  Start date for spent/earned amounts (YYYY-MM-DD)
+</ParamField>
+
+<ParamField query="end" type="string">
+  End date for spent/earned amounts (YYYY-MM-DD)
+</ParamField>
+
+### Response Fields
+
+<ResponseField name="id" type="integer">
+  Category ID
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of creation
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp of last update
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Category name
+</ResponseField>
+
+<ResponseField name="notes" type="string">
+  Category notes
+</ResponseField>
+
+<ResponseField name="object_has_currency_setting" type="boolean">
+  Always false for categories (categories don't have currency settings)
+</ResponseField>
+
+<ResponseField name="primary_currency_id" type="string">
+  Primary currency ID
+</ResponseField>
+
+<ResponseField name="primary_currency_code" type="string">
+  Primary currency code
+</ResponseField>
+
+<ResponseField name="primary_currency_name" type="string">
+  Primary currency name
+</ResponseField>
+
+<ResponseField name="primary_currency_symbol" type="string">
+  Primary currency symbol
+</ResponseField>
+
+<ResponseField name="primary_currency_decimal_places" type="integer">
+  Decimal places for primary currency
+</ResponseField>
+
+<ResponseField name="spent" type="array">
+  Array of spent amounts per currency (for date range if provided)
+</ResponseField>
+
+<ResponseField name="pc_spent" type="array">
+  Array of spent amounts in primary currency
+</ResponseField>
+
+<ResponseField name="earned" type="array">
+  Array of earned amounts per currency
+</ResponseField>
+
+<ResponseField name="pc_earned" type="array">
+  Array of earned amounts in primary currency
+</ResponseField>
+
+<ResponseField name="transferred" type="array">
+  Array of transferred amounts per currency
+</ResponseField>
+
+<ResponseField name="pc_transferred" type="array">
+  Array of transferred amounts in primary currency
+</ResponseField>
+
+## Create Category
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://demo.firefly-iii.org/api/v1/categories" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Groceries",
+    "notes": "Food and household items"
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `POST /v1/categories`
+
+### Request Body
+
+<ParamField body="name" type="string" required>
+  Category name (1-100 characters, must be unique)
+</ParamField>
+
+<ParamField body="notes" type="string">
+  Category notes (max 32,768 characters with newlines supported)
+</ParamField>
+
+<Info>
+Category names must be unique per user. Attempting to create a duplicate category will result in a validation error.
+</Info>
+
+## Get Category by ID
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/categories/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/categories/{id}`
+
+Returns the same response fields as the List endpoint.
+
+### Query Parameters
+
+<ParamField query="start" type="string">
+  Start date for calculating spent/earned amounts (YYYY-MM-DD)
+</ParamField>
+
+<ParamField query="end" type="string">
+  End date for calculating spent/earned amounts (YYYY-MM-DD)
+</ParamField>
+
+## Update Category
+
+<CodeGroup>
+```bash cURL
+curl -X PUT "https://demo.firefly-iii.org/api/v1/categories/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Food & Groceries",
+    "notes": "Updated category for all food expenses"
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `PUT /v1/categories/{id}`
+
+Accepts the same parameters as Create Category. All fields are optional.
+
+## Delete Category
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE "https://demo.firefly-iii.org/api/v1/categories/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `DELETE /v1/categories/{id}`
+
+Deletes the category. Transactions associated with this category will have their category removed.
+
+<Warning>
+Deleting a category removes the category association from all transactions but does not delete the transactions themselves.
+</Warning>
+
+## Related Endpoints
+
+### Get Category Transactions
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/categories/{id}/transactions" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/categories/{id}/transactions`
+
+Returns all transactions associated with this category.
+
+#### Query Parameters
+
+<ParamField query="page" type="integer">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="start" type="string">
+  Start date filter (YYYY-MM-DD)
+</ParamField>
+
+<ParamField query="end" type="string">
+  End date filter (YYYY-MM-DD)
+</ParamField>
+
+<ParamField query="type" type="string">
+  Transaction type filter: `withdrawal`, `deposit`, `transfer`
+</ParamField>
+
+### Get Category Attachments
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/categories/{id}/attachments" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/categories/{id}/attachments`
+
+Returns all attachments associated with this category.
+
+## Best Practices
+
+### Category Organization
+
+1. **Keep it simple**: Don't over-categorize. Use broad categories that make sense for your spending habits.
+
+2. **Consistent naming**: Use consistent naming conventions for similar categories.
+
+3. **Common categories**: Consider using these standard categories:
+   - Food & Dining (Groceries, Restaurants)
+   - Transportation (Gas, Public Transit, Parking)
+   - Housing (Rent, Mortgage, Utilities)
+   - Entertainment (Movies, Hobbies, Subscriptions)
+   - Healthcare (Medical, Pharmacy, Insurance)
+   - Shopping (Clothing, Electronics, Home)
+   - Income (Salary, Freelance, Investment)
+
+4. **Review regularly**: Periodically review your categories to ensure they're still relevant.
+
+### Using with Budgets
+
+Categories and budgets serve different purposes:
+- **Categories**: Organize and track where money goes (descriptive)
+- **Budgets**: Set limits and control spending (prescriptive)
+
+You can use both together for comprehensive financial management.

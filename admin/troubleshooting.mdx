@@ -1,0 +1,778 @@
+---
+title: Troubleshooting
+description: Common issues, solutions, and debugging tips for Firefly III administration
+---
+
+This guide covers common administrative issues, debugging procedures, and solutions for Firefly III problems. Use this as a reference when encountering errors or unexpected behavior.
+
+## Health Checks and Diagnostics
+
+### System Health Check
+
+Firefly III provides a health check endpoint:
+
+```bash
+# Check if application is running
+curl http://localhost/api/v1/health
+
+# Should return:
+OK
+```
+
+The health check performs a basic database connectivity test:
+
+```php
+// From HealthcheckController.php:38
+public function check(): Response
+{
+    User::count(); // sanity check for database health. Will crash if not OK.
+    return response('OK', 200);
+}
+```
+
+If this fails, you have a database connectivity issue.
+
+### Database Integrity Checks
+
+Run comprehensive database validation:
+
+```bash
+# Check and correct database integrity
+php artisan firefly-iii:correct-database
+
+# Generate integrity report
+php artisan firefly-iii:report-integrity
+```
+
+The `correct-database` command runs multiple correction routines:
+
+```bash
+# Individual correction commands
+php artisan correction:timezones
+php artisan correction:create-group-memberships
+php artisan correction:group-information
+php artisan correction:piggy-banks
+php artisan correction:currencies
+php artisan correction:amounts
+php artisan correction:account-types
+php artisan correction:ibans
+php artisan correction:account-order
+php artisan correction:opening-balance-currencies
+php artisan correction:recurring-transactions
+php artisan correction:preferences
+```
+
+<Info>
+  Run `firefly-iii:correct-database` after:
+  - Restoring from backup
+  - Major version upgrades
+  - Database migrations
+  - Suspected data corruption
+</Info>
+
+## Common Issues
+
+### Login Problems
+
+<Accordion title="Cannot login after fresh install">
+  **Symptoms**: Login fails immediately or redirects to login page.
+  
+  **Solutions**:
+  
+  1. Check if user account exists:
+     ```bash
+     php artisan tinker
+     FireflyIII\User::all();
+     ```
+  
+  2. Verify authentication guard:
+     ```bash
+     # In .env
+     AUTHENTICATION_GUARD=web
+     ```
+  
+  3. Clear sessions and cache:
+     ```bash
+     php artisan cache:clear
+     php artisan session:flush
+     rm -rf storage/framework/sessions/*
+     ```
+  
+  4. Check database connection:
+     ```bash
+     php artisan tinker
+     DB::connection()->getPdo();
+     ```
+</Accordion>
+
+<Accordion title="2FA codes not working">
+  **Symptoms**: Valid 2FA codes are rejected.
+  
+  **Solutions**:
+  
+  1. Check server time synchronization:
+     ```bash
+     date
+     # Time must be accurate for TOTP to work
+     sudo ntpdate pool.ntp.org
+     ```
+  
+  2. Verify you're using the latest QR code:
+     - QR codes change on each page load
+     - Re-scan the current code
+  
+  3. Check for code reuse:
+     - Codes are blocked for 5 minutes after use
+     - Wait for next code generation
+  
+  4. Use a backup code instead
+  
+  5. Reset 2FA (see [Security - Lost 2FA Device](/admin/security#lost-2fa-device))
+</Accordion>
+
+<Accordion title="Locked out after failed logins">
+  **Symptoms**: Account blocked after multiple failed attempts.
+  
+  **Solutions**:
+  
+  ```bash
+  # Check if user is blocked
+  php artisan tinker
+  $user = FireflyIII\User::where('email', 'user@example.com')->first();
+  echo $user->blocked ? 'Blocked' : 'Not blocked';
+  
+  # Unblock user
+  $user->blocked = false;
+  $user->blocked_code = null;
+  $user->save();
+  ```
+</Accordion>
+
+### Database Issues
+
+<Accordion title="Migration fails">
+  **Symptoms**: `php artisan migrate` fails with errors.
+  
+  **Solutions**:
+  
+  1. Check database connection:
+     ```bash
+     # Test connection
+     php artisan tinker
+     DB::connection()->getPdo();
+     ```
+  
+  2. Verify credentials in `.env`:
+     ```bash
+     DB_CONNECTION=mysql
+     DB_HOST=127.0.0.1
+     DB_PORT=3306
+     DB_DATABASE=firefly
+     DB_USERNAME=firefly
+     DB_PASSWORD=secret_firefly_password
+     ```
+  
+  3. Check database exists:
+     ```bash
+     mysql -u firefly -p -e "SHOW DATABASES LIKE 'firefly';"
+     ```
+  
+  4. Fix migration table issues:
+     ```bash
+     # Reset migrations (WARNING: deletes data)
+     php artisan migrate:reset
+     php artisan migrate
+     
+     # Or restore from backup and retry
+     ```
+  
+  5. Check for insufficient permissions:
+     ```sql
+     -- Grant permissions
+     GRANT ALL PRIVILEGES ON firefly.* TO 'firefly'@'localhost';
+     FLUSH PRIVILEGES;
+     ```
+</Accordion>
+
+<Accordion title="Database connection refused">
+  **Symptoms**: "Connection refused" or "Could not connect to database".
+  
+  **Solutions**:
+  
+  1. Verify database is running:
+     ```bash
+     # MySQL
+     sudo systemctl status mysql
+     
+     # PostgreSQL
+     sudo systemctl status postgresql
+     
+     # Docker
+     docker ps | grep db
+     ```
+  
+  2. Check host and port:
+     ```bash
+     # Test MySQL connection
+     mysql -h 127.0.0.1 -P 3306 -u firefly -p
+     
+     # Test PostgreSQL
+     psql -h 127.0.0.1 -p 5432 -U firefly -d firefly
+     ```
+  
+  3. For Docker, use container name:
+     ```bash
+     # In .env when using docker-compose
+     DB_HOST=db  # not localhost
+     ```
+  
+  4. Check firewall rules:
+     ```bash
+     sudo ufw status
+     sudo iptables -L
+     ```
+</Accordion>
+
+<Accordion title="Data corruption or inconsistencies">
+  **Symptoms**: Missing transactions, incorrect balances, broken relationships.
+  
+  **Solutions**:
+  
+  ```bash
+  # Run all correction commands
+  php artisan firefly-iii:correct-database
+  
+  # Specific corrections
+  php artisan correction:amounts
+  php artisan correction:currencies
+  php artisan correction:group-information
+  php artisan correction:account-types
+  
+  # Recalculate running balances
+  php artisan firefly-iii:recalculate-running-balance
+  
+  # If issues persist, restore from backup
+  ```
+</Accordion>
+
+### Permission Issues
+
+<Accordion title="File permission errors">
+  **Symptoms**: "Permission denied" errors, cannot write logs, cache errors.
+  
+  **Solutions**:
+  
+  ```bash
+  # Fix ownership (adjust user as needed)
+  sudo chown -R www-data:www-data /var/www/firefly-iii
+  
+  # Fix directory permissions
+  sudo chmod -R 755 /var/www/firefly-iii
+  
+  # Fix storage permissions
+  sudo chmod -R 775 /var/www/firefly-iii/storage
+  sudo chmod -R 775 /var/www/firefly-iii/bootstrap/cache
+  
+  # For Docker
+  docker exec firefly_iii chown -R www-data:www-data /var/www/html/storage
+  ```
+  
+  <Warning>
+    Never use `chmod 777`. This is a security risk. Use `755` for directories and `644` for files.
+  </Warning>
+</Accordion>
+
+<Accordion title="Users cannot access certain features">
+  **Symptoms**: Users get access denied errors or missing features.
+  
+  **Solutions**:
+  
+  1. Check user roles:
+     ```bash
+     php artisan tinker
+     $user = FireflyIII\User::where('email', 'user@example.com')->first();
+     $user->groupMemberships()->with(['userGroup', 'userRole'])->get();
+     ```
+  
+  2. Fix group memberships:
+     ```bash
+     php artisan correction:create-group-memberships
+     php artisan correction:group-information
+     ```
+  
+  3. Verify role permissions:
+     - See [User Management - User Roles](/admin/user-management#available-user-roles)
+  
+  4. Check if user is blocked:
+     ```bash
+     php artisan tinker
+     $user = FireflyIII\User::find(1);
+     echo $user->blocked ? 'Blocked: ' . $user->blocked_code : 'Active';
+     ```
+</Accordion>
+
+### Performance Issues
+
+<Accordion title="Slow page loads">
+  **Symptoms**: Pages take a long time to load, especially dashboards.
+  
+  **Solutions**:
+  
+  1. Enable caching:
+     ```bash
+     # In .env
+     CACHE_DRIVER=redis
+     SESSION_DRIVER=redis
+     
+     # Or use file cache if Redis unavailable
+     CACHE_DRIVER=file
+     SESSION_DRIVER=file
+     ```
+  
+  2. Optimize configuration:
+     ```bash
+     php artisan config:cache
+     php artisan route:cache
+     php artisan view:cache
+     ```
+  
+  3. Database optimization:
+     ```bash
+     # Add indices
+     php artisan migrate
+     
+     # Analyze tables (MySQL)
+     mysql -u firefly -p firefly -e "ANALYZE TABLE transactions;"
+     
+     # Vacuum database (PostgreSQL)
+     psql -U firefly firefly -c "VACUUM ANALYZE;"
+     ```
+  
+  4. Check for large datasets:
+     ```bash
+     php artisan tinker
+     FireflyIII\Models\Transaction::count();
+     FireflyIII\Models\TransactionJournal::count();
+     
+     # Consider archiving old data
+     ```
+  
+  5. Review server resources:
+     ```bash
+     # Check PHP memory limit
+     php -i | grep memory_limit
+     
+     # Monitor resource usage
+     top
+     htop
+     ```
+</Accordion>
+
+<Accordion title="High memory usage">
+  **Symptoms**: Out of memory errors, 500 errors during operations.
+  
+  **Solutions**:
+  
+  1. Increase PHP memory limit:
+     ```bash
+     # In .env
+     PHP_MEMORY_LIMIT=512M
+     
+     # Or in php.ini
+     memory_limit = 512M
+     ```
+  
+  2. Optimize large imports:
+     - Import in smaller batches
+     - Use CSV import instead of API
+  
+  3. Disable debug mode:
+     ```bash
+     # In .env
+     APP_DEBUG=false
+     APP_ENV=production
+     ```
+</Accordion>
+
+### Import/Export Issues
+
+<Accordion title="Import fails or times out">
+  **Symptoms**: CSV/JSON imports fail with timeout or memory errors.
+  
+  **Solutions**:
+  
+  1. Increase PHP limits:
+     ```bash
+     # php.ini
+     max_execution_time = 300
+     memory_limit = 512M
+     upload_max_filesize = 100M
+     post_max_size = 100M
+     ```
+  
+  2. Split large files:
+     - Break CSV into smaller chunks
+     - Import in multiple batches
+  
+  3. Check file encoding:
+     ```bash
+     # Convert to UTF-8
+     iconv -f ISO-8859-1 -t UTF-8 input.csv > output.csv
+     ```
+  
+  4. Validate CSV format:
+     - Check column separators
+     - Verify date formats
+     - Remove special characters
+  
+  5. Review import logs:
+     ```bash
+     tail -f storage/logs/laravel.log
+     ```
+</Accordion>
+
+<Accordion title="Export produces empty or corrupt files">
+  **Symptoms**: Downloaded files are empty or cannot be opened.
+  
+  **Solutions**:
+  
+  1. Check storage permissions:
+     ```bash
+     chmod 775 storage/export
+     chown www-data:www-data storage/export
+     ```
+  
+  2. Clear export cache:
+     ```bash
+     rm -rf storage/export/*
+     ```
+  
+  3. Try different export format:
+     - CSV vs JSON
+     - Different date ranges
+  
+  4. Check error logs:
+     ```bash
+     tail -100 storage/logs/laravel.log
+     ```
+</Accordion>
+
+## Debugging Procedures
+
+### Enable Debug Mode
+
+<Warning>
+  Only enable debug mode temporarily and never on production systems with real data.
+</Warning>
+
+```bash .env
+# Enable debug mode
+APP_DEBUG=true
+APP_ENV=local
+
+# Increase log level
+APP_LOG_LEVEL=debug
+
+# Enable audit log
+AUDIT_LOG_LEVEL=info
+```
+
+After debugging, immediately disable:
+
+```bash
+APP_DEBUG=false
+APP_ENV=production
+APP_LOG_LEVEL=notice
+AUDIT_LOG_LEVEL=emergency
+```
+
+### Check Log Files
+
+Firefly III maintains multiple log files:
+
+```bash
+# Application logs
+tail -f storage/logs/laravel.log
+
+# Audit logs (if enabled)
+tail -f storage/logs/audit.log
+
+# Web server logs
+tail -f /var/log/nginx/error.log
+tail -f /var/log/apache2/error.log
+
+# PHP-FPM logs
+tail -f /var/log/php8.2-fpm.log
+```
+
+### Useful Debugging Commands
+
+```bash
+# Check configuration
+php artisan config:show
+
+# Test database connection
+php artisan tinker
+>>> DB::connection()->getPdo()
+>>> DB::select('SELECT 1')
+
+# Check routes
+php artisan route:list
+
+# Verify environment
+php artisan about
+
+# Check queue jobs
+php artisan queue:failed
+php artisan queue:restart
+
+# Clear all caches
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+```
+
+### Database Queries
+
+```bash
+# Using Laravel Tinker
+php artisan tinker
+
+# Check user count
+>>> FireflyIII\User::count();
+
+# Find user
+>>> $user = FireflyIII\User::where('email', 'user@example.com')->first();
+>>> $user->email
+>>> $user->blocked
+>>> $user->mfa_secret
+
+# Check transactions
+>>> FireflyIII\Models\Transaction::count();
+>>> FireflyIII\Models\Transaction::latest()->take(5)->get();
+
+# Check group memberships
+>>> $user->groupMemberships()->with(['userGroup', 'userRole'])->get();
+
+# View relationships
+>>> $user->accounts()->count();
+>>> $user->transactionJournals()->count();
+```
+
+## Error Messages
+
+### Common Error Codes
+
+<Accordion title="500 Internal Server Error">
+  **Possible causes**:
+  - PHP fatal error
+  - Database connection failure
+  - Permission issues
+  - Configuration errors
+  
+  **Debugging**:
+  ```bash
+  # Check logs
+  tail -100 storage/logs/laravel.log
+  
+  # Enable debug mode temporarily
+  APP_DEBUG=true
+  
+  # Check PHP errors
+  tail -f /var/log/php-fpm.log
+  ```
+</Accordion>
+
+<Accordion title="419 Page Expired">
+  **Cause**: CSRF token mismatch or session expired.
+  
+  **Solutions**:
+  ```bash
+  # Clear sessions
+  php artisan session:flush
+  
+  # Check session configuration
+  # In .env
+  SESSION_DRIVER=file
+  SESSION_LIFETIME=120
+  
+  # Verify APP_KEY is set
+  grep APP_KEY .env
+  
+  # Check storage permissions
+  chmod 775 storage/framework/sessions
+  ```
+</Accordion>
+
+<Accordion title="403 Forbidden">
+  **Possible causes**:
+  - File permission issues
+  - Web server configuration
+  - .htaccess problems
+  
+  **Solutions**:
+  ```bash
+  # Fix permissions
+  chmod 755 /var/www/firefly-iii
+  
+  # Check web server config
+  # Nginx: /etc/nginx/sites-available/firefly
+  # Apache: /etc/apache2/sites-available/firefly.conf
+  
+  # Verify .htaccess
+  cat public/.htaccess
+  ```
+</Accordion>
+
+<Accordion title="413 Request Entity Too Large">
+  **Cause**: Upload exceeds size limits.
+  
+  **Solutions**:
+  ```bash
+  # PHP configuration
+  upload_max_filesize = 100M
+  post_max_size = 100M
+  
+  # Nginx configuration
+  client_max_body_size 100M;
+  
+  # Apache configuration
+  LimitRequestBody 104857600
+  
+  # Restart web server after changes
+  sudo systemctl restart nginx
+  ```
+</Accordion>
+
+## Docker-Specific Issues
+
+<Accordion title="Container won't start">
+  **Solutions**:
+  
+  ```bash
+  # Check container logs
+  docker logs firefly_iii
+  docker logs firefly_iii_db
+  
+  # Check container status
+  docker ps -a
+  
+  # Verify docker-compose.yml
+  docker-compose config
+  
+  # Rebuild containers
+  docker-compose down
+  docker-compose up -d --build
+  
+  # Check for port conflicts
+  netstat -tulpn | grep :80
+  ```
+</Accordion>
+
+<Accordion title="Database initialization fails">
+  **Solutions**:
+  
+  ```bash
+  # Check database logs
+  docker logs firefly_iii_db
+  
+  # Verify environment variables
+  docker exec firefly_iii env | grep DB
+  
+  # Manually run migrations
+  docker exec firefly_iii php artisan migrate --force
+  
+  # Check database volume
+  docker volume ls
+  docker volume inspect firefly_iii_db
+  ```
+</Accordion>
+
+## Getting Help
+
+If you're still experiencing issues:
+
+<Steps>
+  <Step title="Gather Information">
+    Collect diagnostic information:
+    
+    ```bash
+    # System info
+    php artisan about > system-info.txt
+    
+    # Check configuration
+    php artisan config:show > config.txt
+    
+    # Recent logs
+    tail -500 storage/logs/laravel.log > logs.txt
+    
+    # Database stats
+    php artisan tinker
+    >>> echo "Users: " . FireflyIII\User::count();
+    >>> echo "Transactions: " . FireflyIII\Models\Transaction::count();
+    ```
+  </Step>
+  
+  <Step title="Check Documentation">
+    Review official resources:
+    - [Firefly III Documentation](https://docs.firefly-iii.org/)
+    - [FAQ](https://docs.firefly-iii.org/references/faq/)
+    - [GitHub Issues](https://github.com/firefly-iii/firefly-iii/issues)
+  </Step>
+  
+  <Step title="Search Existing Issues">
+    Search for similar problems:
+    - GitHub issue tracker
+    - Community forums
+    - Discord/Reddit discussions
+  </Step>
+  
+  <Step title="Report Issue">
+    If issue persists, create a bug report:
+    - Include system information
+    - Provide error logs (redact sensitive data)
+    - Describe steps to reproduce
+    - Mention Firefly III version
+  </Step>
+</Steps>
+
+<Warning>
+  **Protect Sensitive Data**
+  
+  When sharing logs or configuration:
+  - Redact passwords and API keys
+  - Remove database credentials
+  - Obscure financial data
+  - Replace APP_KEY with placeholder
+</Warning>
+
+## Maintenance Commands
+
+Regular maintenance commands to keep Firefly III healthy:
+
+```bash
+# Weekly maintenance
+php artisan cache:clear
+php artisan view:clear
+php artisan firefly-iii:correct-database
+
+# Monthly maintenance
+php artisan queue:prune-failed
+php artisan telescope:prune  # If using Telescope
+
+# Clear old audit logs
+find storage/logs -name "audit-*.log" -mtime +90 -delete
+
+# Optimize database (MySQL)
+mysqlcheck -u firefly -p --optimize firefly
+
+# Vacuum database (PostgreSQL)
+psql -U firefly firefly -c "VACUUM ANALYZE;"
+```
+
+## Related Topics
+
+- [User Management](/admin/user-management) - User-related issues
+- [Security](/admin/security) - Authentication problems
+- [Backup & Restore](/admin/backup-restore) - Data recovery

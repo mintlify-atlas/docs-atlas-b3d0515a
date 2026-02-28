@@ -1,0 +1,574 @@
+---
+title: Backup and Restore
+description: Database backup procedures and data restoration workflows for Firefly III
+---
+
+Regular backups are critical for protecting your financial data. This guide covers database backup strategies, file backup procedures, and restoration workflows for Firefly III.
+
+## What to Back Up
+
+A complete Firefly III backup includes:
+
+<Steps>
+  <Step title="Database">
+    The PostgreSQL, MySQL, or SQLite database containing:
+    - All financial transactions
+    - User accounts and settings
+    - Budgets, categories, and rules
+    - Account balances and metadata
+  </Step>
+  
+  <Step title="Uploaded Files">
+    The `storage/upload` directory containing:
+    - Transaction attachments
+    - Receipts and invoices
+    - Account documentation
+  </Step>
+  
+  <Step title="Configuration">
+    The `.env` file containing:
+    - Application key (critical!)
+    - Database credentials
+    - API keys and tokens
+    - Email and notification settings
+  </Step>
+  
+  <Step title="OAuth Keys">
+    OAuth encryption keys in `storage/`:
+    - `oauth-private.key`
+    - `oauth-public.key`
+  </Step>
+</Steps>
+
+<Warning>
+  **Critical Files**
+  
+  The following files are essential for restoration:
+  - `.env` (especially `APP_KEY`)
+  - `oauth-private.key` / `oauth-public.key`
+  - Complete database dump
+  
+  Without these, your data may be unrecoverable or unusable.
+</Warning>
+
+## Database Backup Strategies
+
+### MySQL/MariaDB Backup
+
+Create a complete database dump:
+
+```bash
+# Basic backup
+mysqldump -u firefly -p firefly > firefly-backup-$(date +%Y%m%d).sql
+
+# With compression
+mysqldump -u firefly -p firefly | gzip > firefly-backup-$(date +%Y%m%d).sql.gz
+
+# Include routines and triggers
+mysqldump -u firefly -p --routines --triggers firefly > firefly-backup-$(date +%Y%m%d).sql
+```
+
+<Info>
+  If using Docker, connect to the database container:
+  
+  ```bash
+  docker exec firefly_iii_db mysqldump -u firefly -p firefly > backup.sql
+  ```
+</Info>
+
+### PostgreSQL Backup
+
+Create a PostgreSQL database backup:
+
+```bash
+# Basic backup
+pg_dump -U firefly -h localhost firefly > firefly-backup-$(date +%Y%m%d).sql
+
+# Custom format (recommended - allows selective restore)
+pg_dump -U firefly -h localhost -Fc firefly > firefly-backup-$(date +%Y%m%d).dump
+
+# With compression
+pg_dump -U firefly -h localhost firefly | gzip > firefly-backup-$(date +%Y%m%d).sql.gz
+```
+
+For Docker:
+
+```bash
+docker exec firefly_iii_db pg_dump -U firefly firefly > backup.sql
+```
+
+### SQLite Backup
+
+SQLite databases are single files, making backup simple:
+
+```bash
+# Copy database file
+cp database/database.sqlite database/database.sqlite.backup-$(date +%Y%m%d)
+
+# Or use SQLite's backup command
+sqlite3 database/database.sqlite ".backup 'backup-$(date +%Y%m%d).sqlite'"
+```
+
+<Tip>
+  SQLite backups can be performed while Firefly III is running, but it's safer to stop the application first to ensure consistency.
+</Tip>
+
+## File Backup Procedures
+
+### Upload Directory
+
+Back up user-uploaded files:
+
+```bash
+# Create tarball of uploads
+tar -czf firefly-uploads-$(date +%Y%m%d).tar.gz storage/upload/
+
+# Or use rsync for incremental backups
+rsync -av storage/upload/ /backup/firefly-uploads/
+```
+
+### Configuration Files
+
+Back up critical configuration:
+
+```bash
+# Copy .env file (contains sensitive data!)
+cp .env .env.backup-$(date +%Y%m%d)
+
+# Back up OAuth keys
+cp storage/oauth-*.key /backup/firefly-keys/
+```
+
+<Warning>
+  Configuration backups contain sensitive information:
+  - Database passwords
+  - Application encryption key
+  - API tokens
+  - Email credentials
+  
+  Store these backups securely with restricted access.
+</Warning>
+
+## Automated Backup Script
+
+Create a comprehensive backup script:
+
+```bash
+#!/bin/bash
+# firefly-backup.sh
+
+BACKUP_DIR="/backup/firefly"
+DATE=$(date +%Y%m%d-%H%M%S)
+BACKUP_PATH="${BACKUP_DIR}/${DATE}"
+
+# Create backup directory
+mkdir -p "${BACKUP_PATH}"
+
+# Backup database (adjust for your database type)
+mysqldump -u firefly -p${DB_PASSWORD} firefly | gzip > "${BACKUP_PATH}/database.sql.gz"
+
+# Backup uploads
+tar -czf "${BACKUP_PATH}/uploads.tar.gz" -C /var/www/firefly-iii storage/upload/
+
+# Backup configuration
+cp /var/www/firefly-iii/.env "${BACKUP_PATH}/.env"
+cp /var/www/firefly-iii/storage/oauth-*.key "${BACKUP_PATH}/"
+
+# Create backup manifest
+cat > "${BACKUP_PATH}/manifest.txt" << EOF
+Firefly III Backup
+Date: $(date)
+Database: Included
+Uploads: Included
+Configuration: Included
+OAuth Keys: Included
+EOF
+
+# Set secure permissions
+chmod 600 "${BACKUP_PATH}/.env"
+chmod 600 "${BACKUP_PATH}/oauth-*.key"
+
+# Delete backups older than 30 days
+find "${BACKUP_DIR}" -type d -mtime +30 -exec rm -rf {} +
+
+echo "Backup completed: ${BACKUP_PATH}"
+```
+
+Schedule with cron:
+
+```bash
+# Daily backup at 2 AM
+0 2 * * * /usr/local/bin/firefly-backup.sh
+```
+
+## Docker Backup Strategies
+
+### Database Container Backup
+
+For Firefly III running in Docker:
+
+```bash
+# MySQL backup
+docker exec firefly_iii_db /bin/bash -c \
+  'mysqldump -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE}' | \
+  gzip > firefly-db-$(date +%Y%m%d).sql.gz
+
+# PostgreSQL backup
+docker exec firefly_iii_db pg_dump -U firefly firefly | \
+  gzip > firefly-db-$(date +%Y%m%d).sql.gz
+```
+
+### Volume Backup
+
+Back up Docker volumes containing persistent data:
+
+```bash
+# Backup upload volume
+docker run --rm \
+  -v firefly_iii_upload:/data \
+  -v $(pwd):/backup \
+  ubuntu tar czf /backup/firefly-upload-$(date +%Y%m%d).tar.gz /data
+
+# Backup database volume
+docker run --rm \
+  -v firefly_iii_db:/data \
+  -v $(pwd):/backup \
+  ubuntu tar czf /backup/firefly-db-volume-$(date +%Y%m%d).tar.gz /data
+```
+
+### Complete Docker Backup
+
+```bash
+#!/bin/bash
+# docker-backup.sh
+
+BACKUP_DIR="/backup/firefly"
+DATE=$(date +%Y%m%d-%H%M%S)
+
+# Stop containers (optional, for consistency)
+docker-compose stop firefly_iii
+
+# Backup database
+docker-compose exec -T db mysqldump -u firefly -p${DB_PASSWORD} firefly | \
+  gzip > "${BACKUP_DIR}/db-${DATE}.sql.gz"
+
+# Backup volumes
+docker run --rm -v firefly_iii_upload:/data -v ${BACKUP_DIR}:/backup \
+  ubuntu tar czf /backup/upload-${DATE}.tar.gz /data
+
+# Backup configuration
+cp docker-compose.yml "${BACKUP_DIR}/docker-compose-${DATE}.yml"
+cp .env "${BACKUP_DIR}/env-${DATE}"
+
+# Restart containers
+docker-compose start firefly_iii
+
+echo "Backup completed: ${DATE}"
+```
+
+## Restoration Procedures
+
+### Database Restoration
+
+<Warning>
+  Database restoration will **overwrite all existing data**. Ensure you have a current backup before proceeding.
+</Warning>
+
+<Tabs>
+  <Tab title="MySQL/MariaDB">
+    ```bash
+    # Decompress backup if needed
+    gunzip firefly-backup-20260228.sql.gz
+    
+    # Drop existing database (optional)
+    mysql -u firefly -p -e "DROP DATABASE firefly; CREATE DATABASE firefly;"
+    
+    # Restore database
+    mysql -u firefly -p firefly < firefly-backup-20260228.sql
+    
+    # For Docker
+    docker exec -i firefly_iii_db mysql -u firefly -p firefly < backup.sql
+    ```
+  </Tab>
+  
+  <Tab title="PostgreSQL">
+    ```bash
+    # Restore from SQL dump
+    psql -U firefly -h localhost firefly < firefly-backup-20260228.sql
+    
+    # Restore from custom format
+    pg_restore -U firefly -h localhost -d firefly firefly-backup-20260228.dump
+    
+    # For Docker
+    docker exec -i firefly_iii_db psql -U firefly firefly < backup.sql
+    ```
+  </Tab>
+  
+  <Tab title="SQLite">
+    ```bash
+    # Stop Firefly III
+    # Replace database file
+    cp backup-20260228.sqlite database/database.sqlite
+    
+    # Set correct permissions
+    chown www-data:www-data database/database.sqlite
+    chmod 664 database/database.sqlite
+    ```
+  </Tab>
+</Tabs>
+
+### File Restoration
+
+<Steps>
+  <Step title="Restore Configuration">
+    ```bash
+    # Restore .env file
+    cp .env.backup-20260228 .env
+    
+    # Verify APP_KEY matches your backup
+    grep APP_KEY .env
+    ```
+    
+    <Warning>
+      The APP_KEY must match the key used when data was encrypted. Using a different key will corrupt encrypted data.
+    </Warning>
+  </Step>
+  
+  <Step title="Restore OAuth Keys">
+    ```bash
+    # Restore OAuth keys
+    cp backup/oauth-private.key storage/oauth-private.key
+    cp backup/oauth-public.key storage/oauth-public.key
+    
+    # Set permissions
+    chmod 600 storage/oauth-*.key
+    chown www-data:www-data storage/oauth-*.key
+    ```
+  </Step>
+  
+  <Step title="Restore Uploads">
+    ```bash
+    # Extract upload backup
+    tar -xzf firefly-uploads-20260228.tar.gz -C /
+    
+    # Or restore specific directory
+    rm -rf storage/upload
+    tar -xzf firefly-uploads-20260228.tar.gz
+    
+    # Set permissions
+    chown -R www-data:www-data storage/upload
+    chmod -R 755 storage/upload
+    ```
+  </Step>
+</Steps>
+
+### Post-Restoration Steps
+
+After restoring data:
+
+<Steps>
+  <Step title="Clear Cache">
+    ```bash
+    php artisan cache:clear
+    php artisan config:clear
+    php artisan route:clear
+    php artisan view:clear
+    ```
+  </Step>
+  
+  <Step title="Run Migrations">
+    Ensure database schema is current:
+    
+    ```bash
+    php artisan migrate --force
+    ```
+  </Step>
+  
+  <Step title="Verify Data Integrity">
+    ```bash
+    # Check database integrity
+    php artisan firefly-iii:correct-database
+    
+    # Generate integrity report
+    php artisan firefly-iii:report-integrity
+    ```
+  </Step>
+  
+  <Step title="Test Application">
+    - Log in to verify authentication works
+    - Check recent transactions are visible
+    - Verify attachments can be downloaded
+    - Test 2FA if enabled
+    - Review audit logs
+  </Step>
+</Steps>
+
+## Migration to New Server
+
+Moving Firefly III to a new server:
+
+<Steps>
+  <Step title="Prepare New Server">
+    Install Firefly III on the new server but don't run the installer:
+    
+    ```bash
+    # Clone repository or extract release
+    git clone https://github.com/firefly-iii/firefly-iii.git
+    cd firefly-iii
+    
+    # Install dependencies
+    composer install --no-dev
+    ```
+  </Step>
+  
+  <Step title="Transfer Backup Files">
+    Copy backups to new server:
+    
+    ```bash
+    # From old server
+    scp firefly-backup-20260228.sql.gz user@newserver:/tmp/
+    scp -r storage/upload user@newserver:/tmp/
+    scp .env user@newserver:/tmp/
+    scp storage/oauth-*.key user@newserver:/tmp/
+    ```
+  </Step>
+  
+  <Step title="Restore on New Server">
+    ```bash
+    # Restore configuration
+    cp /tmp/.env /var/www/firefly-iii/.env
+    
+    # Restore OAuth keys
+    cp /tmp/oauth-*.key /var/www/firefly-iii/storage/
+    
+    # Restore database
+    mysql -u firefly -p firefly < /tmp/firefly-backup-20260228.sql
+    
+    # Restore uploads
+    cp -r /tmp/upload /var/www/firefly-iii/storage/
+    ```
+  </Step>
+  
+  <Step title="Configure New Environment">
+    Update `.env` for new server:
+    
+    ```bash
+    # Update database host if changed
+    DB_HOST=localhost
+    
+    # Update APP_URL
+    APP_URL=https://new-firefly-server.com
+    
+    # Keep APP_KEY unchanged!
+    ```
+  </Step>
+  
+  <Step title="Finalize Migration">
+    ```bash
+    # Set permissions
+    chown -R www-data:www-data /var/www/firefly-iii
+    chmod -R 755 /var/www/firefly-iii
+    chmod 600 /var/www/firefly-iii/.env
+    
+    # Clear caches
+    php artisan cache:clear
+    php artisan config:clear
+    
+    # Run migrations (in case versions differ)
+    php artisan migrate --force
+    
+    # Test the installation
+    php artisan firefly-iii:verify
+    ```
+  </Step>
+</Steps>
+
+## Disaster Recovery Testing
+
+<Tip>
+  **Test Your Backups**
+  
+  Regularly test backup restoration in a separate environment:
+  
+  1. Set up a test instance of Firefly III
+  2. Restore your latest backup
+  3. Verify data integrity
+  4. Test critical functions
+  5. Document any issues
+  
+  Untested backups are not reliable backups.
+</Tip>
+
+## Best Practices
+
+<Tip>
+  **Backup Strategy**
+  
+  - **Daily**: Automated database backups
+  - **Weekly**: Full backup including files
+  - **Monthly**: Long-term archive
+  - **Before updates**: Manual backup before upgrading
+  - **After major changes**: Backup after importing or bulk operations
+</Tip>
+
+<Tip>
+  **Storage Recommendations**
+  
+  - Store backups on separate physical storage
+  - Use off-site backup location (cloud storage, remote server)
+  - Encrypt backups containing financial data
+  - Maintain multiple backup generations
+  - Test restoration quarterly
+</Tip>
+
+<Info>
+  **Retention Policy Example**
+  
+  - Daily backups: Keep 7 days
+  - Weekly backups: Keep 4 weeks
+  - Monthly backups: Keep 12 months
+  - Yearly backups: Keep indefinitely
+</Info>
+
+## Troubleshooting
+
+### Database Restoration Fails
+
+If restoration fails:
+
+```bash
+# Check backup file integrity
+gunzip -t backup.sql.gz
+
+# Verify database access
+mysql -u firefly -p -e "SHOW DATABASES;"
+
+# Check for version mismatches
+mysql --version
+
+# Try partial restoration
+mysql -u firefly -p firefly < backup.sql 2> errors.log
+```
+
+### Permission Issues
+
+```bash
+# Fix file permissions
+chown -R www-data:www-data /var/www/firefly-iii
+chmod -R 755 /var/www/firefly-iii/storage
+chmod 600 /var/www/firefly-iii/.env
+```
+
+### Encrypted Data Corruption
+
+If data appears corrupted after restoration:
+
+1. Verify APP_KEY matches the original
+2. Check OAuth keys are restored correctly
+3. Review error logs in `storage/logs/`
+
+## Related Topics
+
+- [User Management](/admin/user-management) - Back up user data
+- [Security](/admin/security) - Protect backup files
+- [Troubleshooting](/admin/troubleshooting) - Resolve backup issues

@@ -1,0 +1,479 @@
+---
+title: Security Configuration
+description: Configure authentication, 2FA, OAuth, and security features in Firefly III
+---
+
+Firefly III provides robust security features including multi-factor authentication, OAuth support, and flexible authentication methods. This guide covers security configuration and best practices.
+
+## Authentication Methods
+
+Firefly III supports multiple authentication methods configured via the `AUTHENTICATION_GUARD` setting.
+
+### Built-in Authentication (Default)
+
+The default web-based authentication uses Laravel's built-in system:
+
+```bash .env
+# Use built-in database authentication
+AUTHENTICATION_GUARD=web
+```
+
+<Info>
+  This is the recommended authentication method for most installations. It provides full control over user management, password policies, and 2FA.
+</Info>
+
+### Remote User Authentication
+
+For integration with reverse proxies like Authelia, use remote user guard:
+
+```bash .env
+# Enable remote user authentication
+AUTHENTICATION_GUARD=remote_user_guard
+
+# Header containing authenticated username
+AUTHENTICATION_GUARD_HEADER=REMOTE_USER
+
+# Optional: Header for email address
+AUTHENTICATION_GUARD_EMAIL=
+```
+
+<Warning>
+  When using remote user authentication:
+  - Password management is disabled
+  - Email changes are disabled
+  - 2FA should be handled by the authentication provider
+  - Ensure your reverse proxy is correctly configured to prevent header injection
+</Warning>
+
+### LDAP Authentication
+
+<Warning>
+  LDAP authentication is **no longer supported** in Firefly III. The codebase contains deprecated LDAP methods for backward compatibility only.
+</Warning>
+
+If you previously used LDAP, migrate to:
+- Remote user authentication with Authelia/Authentik
+- OAuth authentication
+- Built-in authentication with manual user import
+
+## Multi-Factor Authentication (2FA)
+
+Firefly III implements Time-based One-Time Password (TOTP) authentication using Google Authenticator protocol.
+
+### Enabling 2FA
+
+<Steps>
+  <Step title="Access MFA Settings">
+    Navigate to Profile → Multi-factor Authentication
+    
+    <Note>
+      MFA is only available when using built-in authentication (`AUTHENTICATION_GUARD=web`).
+    </Note>
+  </Step>
+  
+  <Step title="Generate Secret Key">
+    Click "Enable multi-factor authentication" to generate a new secret:
+    
+    ```php
+    // Secret key generation
+    $secret = Google2FA::generateSecretKey();
+    ```
+    
+    A QR code is displayed for scanning with your authenticator app.
+  </Step>
+  
+  <Step title="Scan QR Code">
+    Use an authenticator app to scan:
+    - Google Authenticator
+    - Authy
+    - Microsoft Authenticator
+    - 1Password
+    - Any TOTP-compatible app
+  </Step>
+  
+  <Step title="Verify and Save">
+    Enter the 6-digit code from your app along with your password to enable 2FA.
+    
+    <Warning>
+      The QR code changes every time you visit the page. Make sure you use the most recent code before verifying.
+    </Warning>
+  </Step>
+  
+  <Step title="Save Backup Codes">
+    After enabling 2FA, you'll receive backup codes. Store these securely:
+    
+    ```
+    8 backup codes generated
+    Each code has 2 blocks with 6 characters
+    Example: abc123-def456
+    ```
+  </Step>
+</Steps>
+
+### Using 2FA
+
+When 2FA is enabled:
+
+1. Enter your email and password on the login page
+2. You'll be redirected to the 2FA verification page
+3. Enter the current 6-digit code from your authenticator app
+4. Alternatively, use one of your backup codes
+
+<Info>
+  **Code Reuse Prevention**
+  
+  Firefly III tracks recently used codes for 5 minutes to prevent replay attacks. If you submit the same code twice within 5 minutes, it will be rejected even if valid.
+</Info>
+
+### Backup Codes
+
+Backup codes allow access when you don't have your authenticator device:
+
+<Accordion title="Generating New Backup Codes">
+  1. Go to Profile → Multi-factor Authentication
+  2. Click "Get new backup codes"
+  3. Enter your current 2FA code to verify
+  4. New codes will be displayed (old codes are invalidated)
+  
+  ```php
+  // Backup code generation
+  $recovery = app(Recovery::class);
+  $codes = $recovery
+      ->lowercase()
+      ->setCount(8)
+      ->setBlocks(2)
+      ->setChars(6)
+      ->toArray();
+  ```
+</Accordion>
+
+<Accordion title="Using Backup Codes">
+  - Each backup code can only be used once
+  - Enter a backup code instead of your 2FA code
+  - You'll receive a notification when you use a backup code
+  - Generate new codes when you have 3 or fewer remaining
+</Accordion>
+
+<Warning>
+  **Backup Code Alerts**
+  
+  You'll receive security notifications:
+  - When you use a backup code
+  - When you have 3 or fewer codes remaining
+  - When you use your last backup code
+  
+  Generate new backup codes immediately after receiving these alerts.
+</Warning>
+
+### Disabling 2FA
+
+<Steps>
+  <Step title="Access MFA Settings">
+    Navigate to Profile → Multi-factor Authentication
+  </Step>
+  
+  <Step title="Disable MFA">
+    Click "Disable MFA" and enter your current 2FA code to confirm
+  </Step>
+  
+  <Step title="Remove from Authenticator App">
+    Don't forget to remove the Firefly III entry from your authenticator app
+  </Step>
+</Steps>
+
+### Lost 2FA Device
+
+If you lose access to your authenticator device and backup codes:
+
+<Tabs>
+  <Tab title="Self-Hosted">
+    If you have server access, reset 2FA via command line:
+    
+    ```bash
+    # Connect to your database
+    mysql -u firefly -p firefly
+    
+    # Find the user ID
+    SELECT id, email FROM users WHERE email = 'user@example.com';
+    
+    # Clear the MFA secret
+    UPDATE users SET mfa_secret = NULL WHERE id = <user_id>;
+    ```
+    
+    Or using Laravel Tinker:
+    
+    ```bash
+    php artisan tinker
+    
+    # Find and update user
+    $user = FireflyIII\User::where('email', 'user@example.com')->first();
+    $user->mfa_secret = null;
+    $user->save();
+    ```
+  </Tab>
+  
+  <Tab title="Hosted Instance">
+    Contact your Firefly III administrator (the site owner specified in `.env` as `SITE_OWNER`) and request a 2FA reset.
+    
+    Administrators should verify the user's identity before resetting their 2FA.
+  </Tab>
+</Tabs>
+
+### 2FA Security Events
+
+Firefly III logs important MFA events to the audit log:
+
+```php
+// Logged events
+- User has enabled MFA
+- User has disabled MFA
+- User has generated new backup codes
+- User has used a backup code
+- User has few backup codes left (3 or fewer)
+- User has no backup codes left
+- User has had multiple failed MFA attempts (3, 10)
+```
+
+Enable audit logging in `.env`:
+
+```bash
+# Enable audit log
+AUDIT_LOG_LEVEL=info
+
+# Optional: separate audit log channel
+AUDIT_LOG_CHANNEL=audit_daily
+```
+
+## OAuth 2.0 Authentication
+
+Firefly III uses Laravel Passport for OAuth 2.0 API authentication.
+
+### OAuth Configuration
+
+Generate OAuth encryption keys:
+
+```bash
+# Generate default keys
+php artisan passport:keys
+
+# Or use custom keys
+php artisan passport:keys --force
+```
+
+<Info>
+  Docker installations automatically generate OAuth keys on first startup.
+</Info>
+
+### Custom OAuth Keys
+
+Provide your own OAuth keys via environment variables:
+
+```bash .env
+# Custom OAuth keys (not recommended for most users)
+PASSPORT_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n..."
+PASSPORT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n..."
+
+# Or use files (recommended for Docker secrets)
+PASSPORT_PRIVATE_KEY_FILE=/run/secrets/oauth_private_key
+PASSPORT_PUBLIC_KEY_FILE=/run/secrets/oauth_public_key
+```
+
+<Warning>
+  Only use custom OAuth keys if you understand the security implications. The default key generation is secure for most installations.
+</Warning>
+
+### API Token Management
+
+Users can generate Personal Access Tokens for API access:
+
+```bash
+# Via web interface
+Profile → OAuth → Personal Access Tokens → Create New Token
+
+# Via API
+POST /oauth/personal-access-tokens
+Authorization: Bearer {token}
+```
+
+<Tip>
+  API tokens inherit the user's group memberships and roles. Protect tokens as you would passwords.
+</Tip>
+
+## Security Headers
+
+Firefly III implements security headers to protect against common attacks.
+
+### X-Frame-Options
+
+Prevents clickjacking by disabling iframe embedding:
+
+```bash .env
+# Disable X-Frame-Options header (not recommended)
+DISABLE_FRAME_HEADER=false
+```
+
+<Warning>
+  Only disable frame headers if you're embedding Firefly III in trusted applications like Organizr. This increases vulnerability to clickjacking attacks.
+</Warning>
+
+### Content Security Policy
+
+Protects against XSS attacks:
+
+```bash .env
+# Disable CSP header (not recommended)
+DISABLE_CSP_HEADER=false
+```
+
+<Warning>
+  Disabling CSP removes protection against cross-site scripting. Only disable if you have compatibility issues with ancient browsers.
+</Warning>
+
+## Cookie Security
+
+Configure secure cookie handling:
+
+```bash .env
+# Cookie path
+COOKIE_PATH="/"
+
+# Domain for cookies (usually leave empty)
+COOKIE_DOMAIN=
+
+# Require HTTPS for cookies (enable in production)
+COOKIE_SECURE=false
+
+# SameSite policy (lax or strict)
+COOKIE_SAMESITE=lax
+```
+
+<Tip>
+  **Production Settings**
+  
+  For HTTPS deployments:
+  ```bash
+  COOKIE_SECURE=true
+  COOKIE_SAMESITE=strict
+  ```
+</Tip>
+
+<Warning>
+  Setting `COOKIE_SAMESITE=strict` may cause login issues. Use `lax` unless you understand the implications.
+</Warning>
+
+## Application Security
+
+### Application Key
+
+The application key encrypts session data and sensitive information:
+
+```bash .env
+# Generate a secure 32-character key
+APP_KEY=SomeRandomStringOf32CharsExactly
+```
+
+Generate a new key:
+
+```bash
+# Generate and set in .env
+php artisan key:generate
+
+# Or generate manually
+head /dev/urandom | LC_ALL=C tr -dc 'A-Za-z0-9' | head -c 32 && echo
+```
+
+<Warning>
+  **Never** change the APP_KEY after installation. This will invalidate all sessions and encrypted data.
+</Warning>
+
+### Debug Mode
+
+<Warning>
+  **Never** enable debug mode in production:
+  
+  ```bash .env
+  APP_DEBUG=false
+  APP_ENV=production
+  ```
+  
+  Debug mode exposes:
+  - Database credentials
+  - Stack traces with file paths
+  - Environment variables
+  - Session data
+</Warning>
+
+## Trusted Proxies
+
+When behind a reverse proxy, configure trusted proxies:
+
+```bash .env
+# Trust all proxies (for Docker)
+TRUSTED_PROXIES=**
+
+# Or specify proxy IPs
+TRUSTED_PROXIES=172.18.0.0/16,10.0.0.1
+```
+
+<Info>
+  This is required for correct IP detection in security logs when using Docker or reverse proxies.
+</Info>
+
+## Security Notifications
+
+Firefly III sends security alerts for:
+
+- New login from unknown IP address
+- Failed login attempts
+- Password changes
+- 2FA changes
+- Backup code usage
+
+Configure email notifications:
+
+```bash .env
+# Enable error messages
+SEND_ERROR_MESSAGE=true
+
+# Email configuration
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.example.com
+MAIL_PORT=587
+MAIL_FROM=firefly@example.com
+MAIL_USERNAME=your_username
+MAIL_PASSWORD=your_password
+MAIL_ENCRYPTION=tls
+```
+
+## Best Practices
+
+<Tip>
+  **Security Checklist**
+  
+  - ✅ Enable 2FA for all admin accounts
+  - ✅ Use strong, unique APP_KEY
+  - ✅ Keep APP_DEBUG=false in production
+  - ✅ Enable COOKIE_SECURE over HTTPS
+  - ✅ Configure email notifications
+  - ✅ Regularly review audit logs
+  - ✅ Keep Firefly III updated
+  - ✅ Use HTTPS with valid certificates
+  - ✅ Restrict database access
+  - ✅ Regular backups (see [Backup & Restore](/admin/backup-restore))
+</Tip>
+
+<Tip>
+  **Password Policy**
+  
+  While Firefly III doesn't enforce password complexity, educate users to:
+  - Use unique passwords (not reused from other sites)
+  - Use password managers
+  - Enable 2FA
+  - Never share accounts
+</Tip>
+
+## Related Topics
+
+- [User Management](/admin/user-management) - Manage users and roles
+- [Backup & Restore](/admin/backup-restore) - Protect your data
+- [Troubleshooting](/admin/troubleshooting) - Security-related issues

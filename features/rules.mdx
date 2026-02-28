@@ -1,0 +1,590 @@
+---
+title: "Rules"
+description: "Automate transaction processing with intelligent rules"
+---
+
+## Overview
+
+Rules are powerful automation tools that process transactions based on conditions you define. They automatically categorize, tag, modify, or act on transactions, saving time and ensuring consistency across your financial records.
+
+## What Are Rules?
+
+A rule has two parts:
+
+<CardGroup cols={2}>
+  <Card title="Triggers" icon="bolt">
+    **Conditions to match**
+    - Description contains "Starbucks"
+    - Amount is greater than $100
+    - Source account is "Checking"
+  </Card>
+  
+  <Card title="Actions" icon="wand-magic-sparkles">
+    **What to do when matched**
+    - Set category to "Coffee"
+    - Add tag "#daily-expense"
+    - Set budget to "Food & Drink"
+  </Card>
+</CardGroup>
+
+<Accordion title="Example: Coffee shop rule">
+  **Triggers:**
+  - Description contains "Starbucks" OR "Peet's Coffee" OR "Blue Bottle"
+  
+  **Actions:**
+  - Set category to "Coffee Shops"
+  - Set budget to "Food & Drink Budget"
+  - Add tag "#caffeine"
+  
+  **Result:** Every coffee shop transaction automatically gets categorized and tagged.
+</Accordion>
+
+## Creating a Rule
+
+<Steps>
+  <Step title="Navigate to Rules">
+    Go to **Rules** in the main navigation.
+  </Step>
+  
+  <Step title="Create New Rule">
+    Click **Create New Rule**.
+  </Step>
+  
+  <Step title="Name Your Rule">
+    Choose a descriptive name ("Categorize Grocery Stores").
+  </Step>
+  
+  <Step title="Add Triggers">
+    Define when the rule should activate:
+    - Click **Add Trigger**
+    - Select trigger type
+    - Enter trigger value
+    - Add more triggers as needed
+  </Step>
+  
+  <Step title="Set Trigger Logic">
+    Choose how triggers combine:
+    - **All triggers** (AND): All conditions must match
+    - **Any trigger** (OR): At least one condition must match
+  </Step>
+  
+  <Step title="Add Actions">
+    Define what happens when triggered:
+    - Click **Add Action**
+    - Select action type
+    - Enter action value
+    - Add more actions as needed
+  </Step>
+  
+  <Step title="Configure Options">
+    - **Active**: Enable/disable the rule
+    - **Strict**: Require all actions to succeed
+    - **Stop processing**: Don't run more rules after this one
+  </Step>
+  
+  <Step title="Save">
+    Click **Save** to activate your rule.
+  </Step>
+</Steps>
+
+## Rule Triggers
+
+Triggers define when a rule activates:
+
+### Description Triggers
+
+<Accordion title="Description is/contains/starts with/ends with">
+  Match based on transaction description:
+  - **Is exactly**: Description is "Netflix Subscription"
+  - **Contains**: Description contains "Whole Foods"
+  - **Starts with**: Description starts with "AMZN"
+  - **Ends with**: Description ends with "Store #1234"
+</Accordion>
+
+### Amount Triggers
+
+<Accordion title="Amount is/more than/less than">
+  Match based on transaction amount:
+  - **Is exactly**: Amount is $50.00
+  - **More than**: Amount > $100
+  - **Less than**: Amount < $10
+  - **Between**: Amount between $50 and $100
+</Accordion>
+
+### Account Triggers
+
+<Accordion title="Source/Destination account">
+  Match based on accounts involved:
+  - **Source account is**: From "Checking Account"
+  - **Destination account is**: To "Savings Account"
+  - **Any account is**: Either source or destination matches
+</Accordion>
+
+### Category Triggers
+
+<Accordion title="Category is/is not">
+  Match based on existing category:
+  - **Category is**: Category is "Groceries"
+  - **Category is not**: Category is not "Uncategorized"
+  - **Has no category**: Transaction has no category
+</Accordion>
+
+### Budget Triggers
+
+<Accordion title="Budget is/is not">
+  Match based on existing budget:
+  - **Budget is**: Budget is "Food Budget"
+  - **Budget is not**: Budget is not "Emergency"
+  - **Has no budget**: Transaction has no budget
+</Accordion>
+
+### Tag Triggers
+
+<Accordion title="Has tag/doesn't have tag">
+  Match based on tags:
+  - **Has tag**: Has tag "#vacation"
+  - **Doesn't have tag**: Doesn't have tag "#reimbursed"
+  - **Has any tag**: Has at least one tag
+</Accordion>
+
+### Transaction Type Triggers
+
+<Accordion title="Type is">
+  Match transaction type:
+  - **Is withdrawal**: Expenses
+  - **Is deposit**: Income
+  - **Is transfer**: Between your accounts
+</Accordion>
+
+### Date Triggers
+
+<Accordion title="Date is/before/after">
+  Match based on transaction date:
+  - **Date is**: Specific date
+  - **Before**: Before certain date
+  - **After**: After certain date
+</Accordion>
+
+## Rule Actions
+
+Actions define what the rule does:
+
+### Set Category
+
+Assign a category to the transaction:
+- Set category to "Groceries"
+- Set category to "Transportation"
+
+### Set Budget
+
+Assign a budget to the transaction:
+- Set budget to "Food Budget"
+- Set budget to "Monthly Expenses"
+
+### Add/Remove Tags
+
+Manage transaction tags:
+- Add tag "#work-expense"
+- Add tag "#reimbursable"
+- Remove tag "#pending"
+
+### Change Description
+
+Modify the transaction description:
+- Prepend text: Add text to the beginning
+- Append text: Add text to the end
+- Set description: Replace entirely
+
+### Change Amount
+
+Modify the transaction amount:
+- Set amount to specific value
+- Multiply amount by percentage
+- Add/subtract from amount
+
+### Link to Bill
+
+Connect transaction to a bill:
+- Link to bill "Rent"
+- Link to bill "Netflix"
+
+### Add Notes
+
+Append notes to transactions:
+- Add note with context
+- Flag for review
+
+### Delete Transaction
+
+<Warning>
+Use with extreme caution! This permanently deletes matching transactions.
+</Warning>
+
+## Trigger Logic: AND vs. OR
+
+### All Triggers (AND)
+
+**Every condition must be true:**
+
+Rule: "Large Restaurant Expenses"
+- Trigger 1: Description contains "Restaurant"
+- Trigger 2: Amount > $50
+- Logic: **All triggers**
+
+Matches: Only restaurant transactions over $50
+
+### Any Trigger (OR)
+
+**At least one condition must be true:**
+
+Rule: "Coffee Shops"
+- Trigger 1: Description contains "Starbucks"
+- Trigger 2: Description contains "Peet's"
+- Trigger 3: Description contains "Blue Bottle"
+- Logic: **Any trigger**
+
+Matches: Transactions from any of these coffee shops
+
+## Rule Groups
+
+Organize related rules into groups:
+
+### Creating a Rule Group
+
+<Steps>
+  <Step title="Navigate to Rule Groups">
+    Go to **Rules** > **Rule Groups**.
+  </Step>
+  
+  <Step title="Create New Group">
+    Click **Create New Rule Group**.
+  </Step>
+  
+  <Step title="Name the Group">
+    Enter a descriptive name ("Shopping Rules").
+  </Step>
+  
+  <Step title="Set Order">
+    Position where this group runs in the sequence.
+  </Step>
+  
+  <Step title="Save">
+    Create the group.
+  </Step>
+</Steps>
+
+### Why Use Groups?
+
+- **Organization**: Group related rules together
+- **Execution Order**: Control which rules run first
+- **Bulk Management**: Enable/disable entire groups
+- **Clarity**: Easier to understand rule structure
+
+<Accordion title="Example: Group structure">
+  **Group 1: Transaction Cleanup** (Order: 1)
+  - Fix merchant names
+  - Remove unnecessary text
+  - Standardize descriptions
+  
+  **Group 2: Categorization** (Order: 2)
+  - Assign categories by merchant
+  - Categorize by amount
+  - Default categories
+  
+  **Group 3: Budgets and Tags** (Order: 3)
+  - Assign budgets
+  - Add project tags
+  - Flag special transactions
+</Accordion>
+
+## Rule Execution
+
+### When Rules Run
+
+Rules execute:
+- **On new transactions**: Automatically when created
+- **On transaction edits**: When you modify transactions
+- **Manual execution**: When you trigger rules manually
+- **On import**: When importing transaction files
+
+### Execution Order
+
+1. Rule groups execute in order (Group 1, then Group 2, etc.)
+2. Within each group, rules execute in order
+3. Each rule's actions execute in sequence
+4. If "stop processing" is set, execution halts
+
+### Stop Processing
+
+Prevent subsequent rules from running:
+
+<Accordion title="When to use stop processing">
+  Enable "stop processing" when:
+  - This rule definitively handles the transaction
+  - Further rules would conflict or overwrite
+  - You want to prevent rule cascades
+  
+  Example: If a transaction matches "Paycheck" rule, don't run generic "deposit" rules after.
+</Accordion>
+
+## Running Rules Manually
+
+Apply rules to existing transactions:
+
+<Steps>
+  <Step title="Navigate to Rules">
+    Go to **Rules** page.
+  </Step>
+  
+  <Step title="Select Rule or Group">
+    Choose which rules to execute.
+  </Step>
+  
+  <Step title="Click Execute">
+    Click **Run Rules** or **Execute**.
+  </Step>
+  
+  <Step title="Select Date Range">
+    Choose which transactions to process.
+  </Step>
+  
+  <Step title="Confirm">
+    Review and confirm execution.
+  </Step>
+</Steps>
+
+<Warning>
+Manual rule execution can modify many transactions at once. Review your rules before running them on large date ranges.
+</Warning>
+
+## Common Rule Examples
+
+### Auto-Categorize Groceries
+
+**Triggers:**
+- Description contains "Whole Foods" OR
+- Description contains "Safeway" OR
+- Description contains "Trader Joe's"
+
+**Actions:**
+- Set category to "Groceries"
+- Set budget to "Food Budget"
+
+### Flag Large Expenses
+
+**Triggers:**
+- Amount > $500
+- Transaction type is withdrawal
+
+**Actions:**
+- Add tag "#large-expense"
+- Add tag "#review"
+
+### Paycheck Processing
+
+**Triggers:**
+- Description contains "Employer Name"
+- Transaction type is deposit
+- Amount between $2,000 and $5,000
+
+**Actions:**
+- Set category to "Salary"
+- Add tag "#income"
+- Add note "Paycheck received"
+- Stop processing
+
+### Shared Expense Tracking
+
+**Triggers:**
+- Description contains "shared" OR
+- Description contains "split"
+
+**Actions:**
+- Add tag "#shared-expense"
+- Add tag "#reimbursable"
+- Set category to "Shared Costs"
+
+### Subscription Management
+
+**Triggers:**
+- Description contains "Subscription" OR
+- Description contains "Netflix" OR
+- Description contains "Spotify" OR
+- Description contains "Adobe"
+
+**Actions:**
+- Set category to "Subscriptions"
+- Set budget to "Monthly Subscriptions"
+- Add tag "#recurring"
+
+## Best Practices
+
+<Accordion title="Start Simple">
+  Begin with basic rules:
+  - One trigger, one action
+  - Common transactions (groceries, gas)
+  - Test before expanding
+  - Add complexity gradually
+</Accordion>
+
+<Accordion title="Test Before Deploying">
+  Verify rules work correctly:
+  - Create test transactions
+  - Run rule manually on small date range
+  - Check results before applying widely
+  - Adjust and retest
+</Accordion>
+
+<Accordion title="Use Descriptive Names">
+  Name rules clearly:
+  - Good: "Categorize Whole Foods as Groceries"
+  - Poor: "Rule 1"
+  - Include what triggers and what happens
+</Accordion>
+
+<Accordion title="Organize with Groups">
+  Structure rules logically:
+  - Group by purpose (categorization, tagging, cleanup)
+  - Order groups by importance
+  - Keep related rules together
+</Accordion>
+
+<Accordion title="Review and Maintain">
+  Keep rules current:
+  - Monthly: Check if rules are still accurate
+  - Quarterly: Remove unused rules
+  - When changing habits: Update rule logic
+  - After imports: Verify rules worked correctly
+</Accordion>
+
+<Accordion title="Don't Over-Automate">
+  Balance automation with control:
+  - Not every transaction needs rules
+  - Some manual categorization is fine
+  - Too many rules = hard to maintain
+  - Focus on repetitive patterns
+</Accordion>
+
+## Strict Mode
+
+Strict mode requires all actions to succeed:
+
+<Accordion title="When to enable strict mode">
+  Use strict mode when:
+  - All actions are critical
+  - Partial execution would be incorrect
+  - You want all-or-nothing behavior
+  
+  Example: A rule that sets category AND budget should use strict mode. If the budget doesn't exist, you want the rule to fail rather than apply only the category.
+</Accordion>
+
+## Advanced Rule Techniques
+
+### Cascading Rules
+
+Use rule order for multi-step processing:
+
+1. **Rule 1**: Clean up merchant names
+2. **Rule 2**: Categorize by cleaned names
+3. **Rule 3**: Assign budgets by category
+
+### Exception Rules
+
+Create specific rules before general ones:
+
+1. **Specific**: "Whole Foods over $200 → Set to Bulk Shopping"
+2. **General**: "Whole Foods → Set to Groceries"
+
+Place specific rules first with "stop processing" enabled.
+
+### Negative Matching
+
+Use "is not" triggers for exclusions:
+
+**Triggers:**
+- Category is not "Groceries"
+- Category is not "Transportation"
+- Budget is not set
+
+**Actions:**
+- Add tag "#needs-review"
+
+### Multi-Step Processing
+
+Chain rules together:
+
+1. **Rule**: Add tag "#to-categorize" to uncategorized
+2. **Rule**: Categorize transactions with "#to-categorize"
+3. **Rule**: Remove "#to-categorize" after categorizing
+
+## Troubleshooting
+
+<Accordion title="Rule not triggering">
+  Check:
+  - Rule is marked as **Active**
+  - Trigger logic (AND vs OR) is correct
+  - Trigger values match exactly
+  - Rule group is active
+  - Rule order allows it to execute
+</Accordion>
+
+<Accordion title="Action not applying">
+  Verify:
+  - Action values are valid (category/budget/tag exists)
+  - Strict mode isn't causing rule to fail
+  - No conflicting rules override the action
+  - Transaction type supports the action
+</Accordion>
+
+<Accordion title="Too many transactions affected">
+  If rules match too broadly:
+  - Add more specific triggers
+  - Use AND logic instead of OR
+  - Add exception triggers (is not, doesn't have)
+  - Test on smaller date ranges first
+</Accordion>
+
+<Accordion title="Rules conflict with each other">
+  When rules interfere:
+  - Reorder rules (specific before general)
+  - Use "stop processing" on definitive rules
+  - Review rule groups and execution order
+  - Consolidate overlapping rules
+</Accordion>
+
+## Integration with Other Features
+
+### With Transactions
+
+Rules automatically process transactions:
+- Apply on creation
+- Apply on edit
+- Apply on import
+
+### With Categories and Tags
+
+Automate organization:
+- Auto-assign categories
+- Auto-apply tags
+- Maintain consistency
+
+### With Budgets
+
+Streamline budget tracking:
+- Auto-assign budgets by merchant
+- Budget by transaction pattern
+- Ensure all expenses are budgeted
+
+### With Recurring Transactions
+
+Enhance recurring transactions:
+- Apply rules to auto-created transactions
+- Add additional categorization
+- Supplement recurring transaction templates
+
+## Related Features
+
+- [Transactions](/features/transactions) - What rules process
+- [Categories & Tags](/features/categories-tags) - Common rule actions
+- [Budgets](/features/budgets) - Rules can assign budgets
+- [Bills](/features/bills) - Rules can link to bills

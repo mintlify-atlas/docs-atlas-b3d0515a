@@ -1,0 +1,372 @@
+---
+title: Piggy Banks API
+description: Manage savings goals and track progress
+---
+
+## Overview
+
+The Piggy Banks API allows you to create and manage savings goals. Piggy banks help you save for specific targets by setting aside money from your accounts and tracking your progress.
+
+## List All Piggy Banks
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/piggy-banks" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/piggy-banks`
+
+### Query Parameters
+
+<ParamField query="page" type="integer">
+  Page number for pagination
+</ParamField>
+
+### Response Fields
+
+<ResponseField name="id" type="string">
+  Piggy bank ID
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of creation
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp of last update
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Piggy bank name
+</ResponseField>
+
+<ResponseField name="percentage" type="integer">
+  Percentage of target achieved (0-100+)
+</ResponseField>
+
+<ResponseField name="start_date" type="string">
+  Start date (ISO 8601)
+</ResponseField>
+
+<ResponseField name="target_date" type="string">
+  Target completion date (ISO 8601)
+</ResponseField>
+
+<ResponseField name="order" type="integer">
+  Display order
+</ResponseField>
+
+<ResponseField name="active" type="boolean">
+  Always true for piggy banks
+</ResponseField>
+
+<ResponseField name="notes" type="string">
+  Piggy bank notes
+</ResponseField>
+
+<ResponseField name="object_group_id" type="string">
+  Object group ID if in a group
+</ResponseField>
+
+<ResponseField name="object_group_order" type="integer">
+  Order within object group
+</ResponseField>
+
+<ResponseField name="object_group_title" type="string">
+  Object group title
+</ResponseField>
+
+<ResponseField name="accounts" type="array">
+  Array of associated accounts with their current amounts
+</ResponseField>
+
+<ResponseField name="object_has_currency_setting" type="boolean">
+  Always true for piggy banks
+</ResponseField>
+
+<ResponseField name="currency_id" type="string">
+  Currency ID
+</ResponseField>
+
+<ResponseField name="currency_code" type="string">
+  Currency code
+</ResponseField>
+
+<ResponseField name="currency_name" type="string">
+  Currency name
+</ResponseField>
+
+<ResponseField name="currency_symbol" type="string">
+  Currency symbol
+</ResponseField>
+
+<ResponseField name="currency_decimal_places" type="integer">
+  Decimal places for currency
+</ResponseField>
+
+<ResponseField name="target_amount" type="string">
+  Target savings amount
+</ResponseField>
+
+<ResponseField name="pc_target_amount" type="string">
+  Target amount in primary currency
+</ResponseField>
+
+<ResponseField name="current_amount" type="string">
+  Current saved amount
+</ResponseField>
+
+<ResponseField name="pc_current_amount" type="string">
+  Current amount in primary currency
+</ResponseField>
+
+<ResponseField name="left_to_save" type="string">
+  Amount remaining to reach target
+</ResponseField>
+
+<ResponseField name="pc_left_to_save" type="string">
+  Remaining amount in primary currency
+</ResponseField>
+
+<ResponseField name="save_per_month" type="string">
+  Recommended monthly savings to reach target
+</ResponseField>
+
+<ResponseField name="pc_save_per_month" type="string">
+  Monthly savings in primary currency
+</ResponseField>
+
+## Create Piggy Bank
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://demo.firefly-iii.org/api/v1/piggy-banks" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "New Car Fund",
+    "accounts": [
+      {
+        "account_id": "3",
+        "current_amount": "5000.00"
+      }
+    ],
+    "target_amount": "25000.00",
+    "start_date": "2024-01-01",
+    "target_date": "2026-01-01",
+    "transaction_currency_code": "USD",
+    "notes": "Saving for a new electric vehicle"
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `POST /v1/piggy-banks`
+
+### Request Body
+
+<ParamField body="name" type="string" required>
+  Piggy bank name (1-255 characters, must be unique)
+</ParamField>
+
+<ParamField body="accounts" type="array" required>
+  Array of account objects (minimum 1 account)
+</ParamField>
+
+<ParamField body="accounts[].account_id" type="integer" required>
+  Account ID (must be asset or liability account belonging to user)
+</ParamField>
+
+<ParamField body="accounts[].current_amount" type="string">
+  Current amount saved in this account (zero or positive number)
+</ParamField>
+
+<ParamField body="target_amount" type="string" required>
+  Target savings amount (must be ≥ sum of current amounts)
+</ParamField>
+
+<ParamField body="start_date" type="string" required>
+  Start date (YYYY-MM-DD, after 1970-01-01, before 2038-01-17)
+</ParamField>
+
+<ParamField body="target_date" type="string">
+  Target completion date (must be after start_date)
+</ParamField>
+
+<ParamField body="transaction_currency_id" type="integer">
+  Currency ID (required without transaction_currency_code)
+</ParamField>
+
+<ParamField body="transaction_currency_code" type="string">
+  Currency code (required without transaction_currency_id)
+</ParamField>
+
+<ParamField body="order" type="integer">
+  Display order
+</ParamField>
+
+<ParamField body="notes" type="string">
+  Piggy bank notes (max 65,000 characters)
+</ParamField>
+
+<ParamField body="object_group_id" type="integer">
+  Object group ID to associate with
+</ParamField>
+
+<ParamField body="object_group_title" type="string">
+  Object group title (1-255 characters)
+</ParamField>
+
+<Info>
+**Account Currency Validation:**
+
+The currency of the piggy bank must match the currency of the associated accounts, unless the account has multi-currency support enabled.
+</Info>
+
+<Warning>
+**Current Amount Limitation:**
+
+The sum of all current amounts across accounts cannot exceed the target amount. Ensure your target is realistic for the initial amounts you're setting.
+</Warning>
+
+## Get Piggy Bank by ID
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/piggy-banks/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/piggy-banks/{id}`
+
+Returns the same response fields as the List endpoint.
+
+## Update Piggy Bank
+
+<CodeGroup>
+```bash cURL
+curl -X PUT "https://demo.firefly-iii.org/api/v1/piggy-banks/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Electric Car Fund",
+    "target_amount": "30000.00",
+    "target_date": "2026-06-01",
+    "notes": "Increased target for better model"
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `PUT /v1/piggy-banks/{id}`
+
+Accepts the same parameters as Create Piggy Bank. All fields are optional.
+
+## Delete Piggy Bank
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE "https://demo.firefly-iii.org/api/v1/piggy-banks/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `DELETE /v1/piggy-banks/{id}`
+
+Deletes the piggy bank. The actual money in the accounts remains unchanged.
+
+<Warning>
+Deleting a piggy bank only removes the savings goal tracking. Your actual account balances are not affected.
+</Warning>
+
+## Related Endpoints
+
+### Get Piggy Bank Events
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/piggy-banks/{id}/events" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/piggy-banks/{id}/events`
+
+Returns all events (additions and removals) for this piggy bank.
+
+#### Query Parameters
+
+<ParamField query="page" type="integer">
+  Page number for pagination
+</ParamField>
+
+### Get Piggy Bank Attachments
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/piggy-banks/{id}/attachments" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/piggy-banks/{id}/attachments`
+
+Returns all attachments for this piggy bank.
+
+### Get Piggy Bank Accounts
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/piggy-banks/{id}/accounts" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/piggy-banks/{id}/accounts`
+
+Returns all accounts associated with this piggy bank.
+
+## Best Practices
+
+### Setting Realistic Goals
+
+1. **Calculate monthly savings**: Divide target by months available
+2. **Consider your budget**: Ensure the goal fits within your budget constraints
+3. **Set milestone dates**: Use target_date to create urgency and track progress
+
+### Managing Multiple Accounts
+
+Piggy banks support multiple accounts, useful for:
+- **Diversification**: Spread savings across checking and savings accounts
+- **Joint goals**: Track contributions from multiple account holders
+- **Currency hedging**: Save in different currencies (with multi-currency accounts)
+
+### Tracking Progress
+
+Use the `percentage` field to:
+- Visualize goal completion
+- Celebrate milestones (25%, 50%, 75%, 100%)
+- Adjust savings rate if behind schedule
+
+Use the `save_per_month` field to:
+- Understand required monthly contributions
+- Adjust timeline if monthly amount is too high
+- Plan budget allocations
+
+### Common Savings Goals
+
+- **Emergency Fund**: 3-6 months of expenses
+- **Major Purchases**: Car, home down payment, electronics
+- **Vacation**: Holiday or travel expenses
+- **Education**: Tuition, courses, certifications
+- **Debt Payoff**: Credit card, loan principal
+- **Investment**: Initial investment capital

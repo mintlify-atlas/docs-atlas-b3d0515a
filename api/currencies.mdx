@@ -1,0 +1,416 @@
+---
+title: Currencies API
+description: Manage transaction currencies and exchange rates
+---
+
+## Overview
+
+The Currencies API allows you to manage available currencies in your Firefly III instance. You can create custom currencies, enable/disable them, and set your default currency.
+
+## List All Currencies
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/currencies" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/currencies`
+
+### Query Parameters
+
+<ParamField query="page" type="integer">
+  Page number for pagination
+</ParamField>
+
+### Response Fields
+
+<ResponseField name="id" type="integer">
+  Currency ID
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of creation
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp of last update
+</ResponseField>
+
+<ResponseField name="native" type="boolean">
+  Whether this is the user group's native/default currency
+</ResponseField>
+
+<ResponseField name="default" type="boolean">
+  Alias for native (same value)
+</ResponseField>
+
+<ResponseField name="primary" type="boolean">
+  Alias for native (same value)
+</ResponseField>
+
+<ResponseField name="enabled" type="boolean">
+  Whether the currency is enabled for use
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Currency name (e.g., "US Dollar")
+</ResponseField>
+
+<ResponseField name="code" type="string">
+  ISO 4217 currency code (e.g., "USD")
+</ResponseField>
+
+<ResponseField name="symbol" type="string">
+  Currency symbol (e.g., "$")
+</ResponseField>
+
+<ResponseField name="decimal_places" type="integer">
+  Number of decimal places for this currency
+</ResponseField>
+
+## Create Currency
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://demo.firefly-iii.org/api/v1/currencies" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Bitcoin",
+    "code": "BTC",
+    "symbol": "₿",
+    "decimal_places": 8,
+    "enabled": true,
+    "default": false
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `POST /v1/currencies`
+
+### Request Body
+
+<ParamField body="name" type="string" required>
+  Currency name (1-255 characters, must be unique)
+</ParamField>
+
+<ParamField body="code" type="string" required>
+  Currency code (3-32 characters, must be unique)
+</ParamField>
+
+<ParamField body="symbol" type="string" required>
+  Currency symbol (1-32 characters, must be unique)
+</ParamField>
+
+<ParamField body="decimal_places" type="integer" default="2">
+  Number of decimal places (0-12)
+</ParamField>
+
+<ParamField body="enabled" type="boolean" default="true">
+  Whether the currency is enabled
+</ParamField>
+
+<ParamField body="default" type="boolean" default="false">
+  Set as default currency for the user group
+</ParamField>
+
+<Info>
+Firefly III comes with most world currencies pre-installed. You typically only need to create custom currencies for:
+- Cryptocurrencies
+- Loyalty points
+- Virtual currencies
+- Historical or discontinued currencies
+</Info>
+
+## Get Currency by Code
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/currencies/USD" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/currencies/{currency_code}`
+
+Returns the same response fields as the List endpoint.
+
+## Get Primary Currency
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/currencies/primary" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/currencies/primary`
+
+Returns the user group's primary/default currency.
+
+**Alias:** `GET /v1/currencies/default`
+
+## Update Currency
+
+<CodeGroup>
+```bash cURL
+curl -X PUT "https://demo.firefly-iii.org/api/v1/currencies/BTC" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Bitcoin (Updated)",
+    "enabled": true
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `PUT /v1/currencies/{currency_code}`
+
+Accepts the same parameters as Create Currency. All fields are optional.
+
+<Note>
+You can also use `PUT /v1/currencies` without a code parameter to update multiple currency properties.
+</Note>
+
+## Delete Currency
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE "https://demo.firefly-iii.org/api/v1/currencies/BTC" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `DELETE /v1/currencies/{currency_code}`
+
+Deletes the currency if it's not in use.
+
+<Warning>
+You cannot delete a currency that is:
+- Used by any accounts
+- Used by any transactions
+- Set as the default currency
+- A system currency
+</Warning>
+
+## Enable Currency
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://demo.firefly-iii.org/api/v1/currencies/EUR/enable" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `POST /v1/currencies/{currency_code}/enable`
+
+Enables the currency for use in accounts and transactions.
+
+## Disable Currency
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://demo.firefly-iii.org/api/v1/currencies/EUR/disable" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `POST /v1/currencies/{currency_code}/disable`
+
+Disables the currency (it will no longer appear in dropdowns).
+
+<Warning>
+You cannot disable a currency that is currently set as the default/primary currency.
+</Warning>
+
+## Set Primary Currency
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://demo.firefly-iii.org/api/v1/currencies/EUR/primary" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `POST /v1/currencies/{currency_code}/primary`
+
+Sets this currency as the primary/default currency for your user group.
+
+## Related Endpoints
+
+### Get Currency Accounts
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/currencies/USD/accounts" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/currencies/{currency_code}/accounts`
+
+Returns all accounts using this currency.
+
+### Get Currency Available Budgets
+
+**Endpoint:** `GET /v1/currencies/{currency_code}/available-budgets`
+
+Returns available budgets using this currency.
+
+### Get Currency Bills
+
+**Endpoint:** `GET /v1/currencies/{currency_code}/bills`
+
+Returns all bills using this currency.
+
+### Get Currency Budget Limits
+
+**Endpoint:** `GET /v1/currencies/{currency_code}/budget-limits`
+
+Returns all budget limits using this currency.
+
+### Get Currency Exchange Rates
+
+**Endpoint:** `GET /v1/currencies/{currency_code}/cer`
+
+Returns currency exchange rates for this currency.
+
+### Get Currency Recurrences
+
+**Endpoint:** `GET /v1/currencies/{currency_code}/recurrences`
+
+Returns recurring transactions using this currency.
+
+### Get Currency Rules
+
+**Endpoint:** `GET /v1/currencies/{currency_code}/rules`
+
+Returns rules that reference this currency.
+
+### Get Currency Transactions
+
+**Endpoint:** `GET /v1/currencies/{currency_code}/transactions`
+
+Returns all transactions using this currency.
+
+#### Query Parameters
+
+<ParamField query="page" type="integer">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="start" type="string">
+  Start date (YYYY-MM-DD)
+</ParamField>
+
+<ParamField query="end" type="string">
+  End date (YYYY-MM-DD)
+</ParamField>
+
+<ParamField query="type" type="string">
+  Transaction type filter
+</ParamField>
+
+## Currency Exchange Rates
+
+Firefly III also provides exchange rate management through the `/v1/exchange-rates` endpoints:
+
+### List Exchange Rates
+
+**Endpoint:** `GET /v1/exchange-rates`
+
+Returns all configured exchange rates.
+
+### Get Exchange Rate
+
+**Endpoint:** `GET /v1/exchange-rates/{fromCurrencyCode}/{toCurrencyCode}`
+
+Returns the exchange rate between two currencies.
+
+### Get Exchange Rate by Date
+
+**Endpoint:** `GET /v1/exchange-rates/{fromCurrencyCode}/{toCurrencyCode}/{date}`
+
+Returns the exchange rate for a specific date.
+
+### Create Exchange Rate
+
+**Endpoint:** `POST /v1/exchange-rates`
+
+Creates a new exchange rate entry.
+
+### Update Exchange Rate
+
+**Endpoint:** `PUT /v1/exchange-rates/{userGroupExchangeRate}`
+
+Updates an existing exchange rate.
+
+### Delete Exchange Rate
+
+**Endpoint:** `DELETE /v1/exchange-rates/{fromCurrencyCode}/{toCurrencyCode}`
+
+Deletes all exchange rates between two currencies.
+
+## Best Practices
+
+### Currency Setup
+
+1. **Set your primary currency first**: This should be your main operating currency
+2. **Enable only needed currencies**: Keep the list manageable
+3. **Use standard codes**: Stick to ISO 4217 codes when possible
+4. **Configure exchange rates**: Set up rates for currencies you use regularly
+
+### Multi-Currency Management
+
+**When to use multiple currencies:**
+- International transactions
+- Foreign bank accounts
+- Investment accounts in different currencies
+- Cryptocurrency holdings
+- Travel expenses
+
+**Best practices:**
+- Keep exchange rates updated
+- Use the primary currency for reporting
+- Enable auto-conversion for better insights
+- Track foreign transaction fees separately
+
+### Decimal Places
+
+Choose appropriate decimal places:
+- **Fiat currencies**: Usually 2 (USD, EUR, GBP)
+- **Some currencies**: 0 (JPY, KRW)
+- **Cryptocurrencies**: 8 (BTC, ETH)
+- **Precious metals**: 4 (Gold, Silver ounces)
+- **Loyalty points**: 0
+
+### Common Currency Codes
+
+**Major Fiat:**
+- USD - US Dollar
+- EUR - Euro
+- GBP - British Pound
+- JPY - Japanese Yen
+- CNY - Chinese Yuan
+- INR - Indian Rupee
+
+**Cryptocurrencies:**
+- BTC - Bitcoin (8 decimals)
+- ETH - Ethereum (8 decimals)
+- USDT - Tether (2 decimals)
+
+**Commodities:**
+- XAU - Gold (troy ounce)
+- XAG - Silver (troy ounce)

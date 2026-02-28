@@ -1,0 +1,376 @@
+---
+title: "Transactions"
+description: "Record and manage all your financial transactions"
+---
+
+## Overview
+
+Transactions are the heart of Firefly III. Every time money moves, you create a transaction to record it. Understanding transaction types and how to manage them efficiently is key to maintaining accurate financial records.
+
+## Transaction Types
+
+Firefly III supports three main transaction types:
+
+<CardGroup cols={3}>
+  <Card title="Withdrawals" icon="arrow-down">
+    Money leaving your asset accounts. Use for expenses like groceries, bills, or shopping.
+  </Card>
+  
+  <Card title="Deposits" icon="arrow-up">
+    Money entering your asset accounts. Use for income like salary, gifts, or refunds.
+  </Card>
+  
+  <Card title="Transfers" icon="arrow-right-arrow-left">
+    Money moving between your own accounts. Use when moving money between checking and savings.
+  </Card>
+</CardGroup>
+
+## Creating a Transaction
+
+<Steps>
+  <Step title="Navigate to Transactions">
+    Click **Create New** in the top menu or go to **Transactions** > **Create New**.
+  </Step>
+  
+  <Step title="Select Transaction Type">
+    Choose Withdrawal, Deposit, or Transfer based on the money movement.
+  </Step>
+  
+  <Step title="Enter Basic Information">
+    Fill in the essential details:
+    - **Source Account**: Where money comes from
+    - **Destination Account**: Where money goes to
+    - **Amount**: The transaction amount
+    - **Date**: When the transaction occurred
+    - **Description**: What the transaction was for
+  </Step>
+  
+  <Step title="Add Optional Details">
+    Enhance your transaction with:
+    - **Category**: What type of expense or income
+    - **Budget**: Which budget this affects (for withdrawals)
+    - **Tags**: Additional labels for organization
+    - **Notes**: Any extra information
+  </Step>
+  
+  <Step title="Save">
+    Click **Save** to record the transaction.
+  </Step>
+</Steps>
+
+## Understanding Transaction Fields
+
+### Source and Destination Accounts
+
+The accounts involved depend on transaction type:
+
+| Transaction Type | Source Account | Destination Account |
+|-----------------|----------------|--------------------|
+| Withdrawal | Your asset account | Expense account (store, restaurant) |
+| Deposit | Revenue account (employer, client) | Your asset account |
+| Transfer | Your asset account | Another asset account |
+
+<Tip>
+Firefly III automatically creates expense and revenue accounts as you type. Just enter the name of the store or employer!
+</Tip>
+
+### Description
+
+The description explains what the transaction was for:
+- Be specific: "Grocery shopping at Whole Foods" not "Shopping"
+- Include relevant details: "Gas for road trip" not "Gas"
+- Stay consistent with naming for similar transactions
+
+### Categories and Budgets
+
+<Accordion title="What's the difference between categories and budgets?">
+  **Categories** classify what you spent money on (e.g., "Groceries", "Entertainment").
+  
+  **Budgets** are spending limits you set for specific purposes (e.g., "Monthly Food Budget").
+  
+  Use both together: A transaction might be categorized as "Groceries" and count toward your "Food Budget".
+</Accordion>
+
+### Tags
+
+Tags provide flexible labeling:
+- Mark shared expenses: `#shared`
+- Track projects: `#kitchen-renovation`
+- Identify special events: `#vacation-2024`
+- Flag reimbursable items: `#reimbursable`
+
+## Working with Transactions
+
+### Editing Transactions
+
+<Steps>
+  <Step title="Find the Transaction">
+    Use the search feature or browse your transaction list.
+  </Step>
+  
+  <Step title="Click Edit">
+    Click the edit icon or open the transaction and click **Edit**.
+  </Step>
+  
+  <Step title="Make Changes">
+    Update any fields as needed.
+  </Step>
+  
+  <Step title="Save">
+    Click **Save** to apply changes.
+  </Step>
+</Steps>
+
+<Warning>
+Editing historical transactions affects your account balances and reports. Make sure changes are accurate!
+</Warning>
+
+### Deleting Transactions
+
+To delete a transaction:
+1. Open the transaction details
+2. Click **Delete**
+3. Confirm the deletion
+
+<Note>
+Deleted transactions are permanently removed. Consider making a backup before deleting important financial data.
+</Note>
+
+### Splitting Transactions
+
+Split one transaction into multiple parts:
+
+<Accordion title="When to split transactions">
+  Split transactions when one payment includes multiple categories:
+  - Shopping trip with groceries, household items, and personal care
+  - Restaurant bill that includes food and takeout for home
+  - Combined utility bill covering multiple services
+</Accordion>
+
+**How to split:**
+1. When creating or editing a transaction, click **Add Split**
+2. Enter amount and details for each part
+3. Ensure splits add up to the total transaction amount
+4. Assign different categories/budgets to each split
+
+### Foreign Currency Transactions
+
+Handle transactions in multiple currencies:
+
+<Steps>
+  <Step title="Enter Primary Amount">
+    Input the amount in the account's currency.
+  </Step>
+  
+  <Step title="Add Foreign Amount">
+    Click to add foreign currency and enter the amount.
+  </Step>
+  
+  <Step title="Automatic Conversion">
+    Firefly III calculates the exchange rate automatically.
+  </Step>
+</Steps>
+
+## Transaction List and Filtering
+
+### Viewing Transactions
+
+The transaction list shows all your financial activity:
+- **Search**: Find transactions by description, account, or amount
+- **Filter**: Narrow by type, date range, or account
+- **Sort**: Order by date, amount, or description
+
+### Date Ranges
+
+Common date filters:
+- Today
+- This week/month/year
+- Last 30/60/90 days
+- Custom date range
+
+### Advanced Search
+
+Search supports:
+- Account names: `account:"Checking"`
+- Amount ranges: `amount:>100`
+- Categories: `category:"Groceries"`
+- Descriptions: `description:"Whole Foods"`
+
+## Bulk Operations
+
+### Mass Editing
+
+Edit multiple transactions at once:
+1. Select transactions using checkboxes
+2. Click **Mass Edit**
+3. Choose fields to update
+4. Apply changes to all selected
+
+### Mass Deleting
+
+<Warning>
+Bulk deletion is permanent! Review your selection carefully before proceeding.
+</Warning>
+
+## Transaction Attachments
+
+Attach receipts and documents:
+
+<Steps>
+  <Step title="Open Transaction">
+    View the transaction details.
+  </Step>
+  
+  <Step title="Add Attachment">
+    Click **Attach File** and select your document.
+  </Step>
+  
+  <Step title="Add Description">
+    Optionally describe what the attachment is.
+  </Step>
+</Steps>
+
+**Supported file types:**
+- Images (JPG, PNG, GIF)
+- PDFs
+- Text documents
+
+## Transaction Links
+
+Link related transactions together:
+
+<Accordion title="Use cases for transaction links">
+  - Connect a refund to the original purchase
+  - Link a reimbursement to the expense
+  - Relate a payment to an invoice
+  - Associate a fee with its source transaction
+</Accordion>
+
+## Best Practices
+
+<Accordion title="Record Transactions Promptly">
+  Enter transactions as soon as they happen. This prevents forgotten expenses and keeps your balance accurate.
+</Accordion>
+
+<Accordion title="Be Consistent with Descriptions">
+  Use similar wording for similar transactions. This makes searching easier and improves automatic categorization.
+</Accordion>
+
+<Accordion title="Use Categories and Budgets Together">
+  Categorize all expenses and assign budgets to spending you want to control. This gives you both organization and planning.
+</Accordion>
+
+<Accordion title="Review Regularly">
+  Check your transactions weekly to catch errors early and stay aware of your spending patterns.
+</Accordion>
+
+<Accordion title="Don't Forget Small Transactions">
+  Track all expenses, even small ones. They add up quickly and can reveal spending patterns.
+</Accordion>
+
+## Reconciliation
+
+Match Firefly III transactions with bank statements:
+
+<Steps>
+  <Step title="Mark as Reconciled">
+    Check the reconciliation checkbox on verified transactions.
+  </Step>
+  
+  <Step title="Compare with Statement">
+    Ensure all bank statement items are in Firefly III.
+  </Step>
+  
+  <Step title="Investigate Differences">
+    Find missing or duplicate transactions.
+  </Step>
+  
+  <Step title="Adjust if Needed">
+    Add missing transactions or correct errors.
+  </Step>
+</Steps>
+
+<Tip>
+Reconcile at least monthly to keep your records accurate and catch issues early.
+</Tip>
+
+## Special Transaction Scenarios
+
+### Handling Refunds
+
+**Option 1: Create a new deposit**
+- Create a deposit from the store back to your account
+- Use the same category as the original purchase
+- Link to the original transaction
+
+**Option 2: Edit the original transaction**
+- Adjust the amount to reflect the net cost
+- Add a note explaining the refund
+
+### Recording Cash Transactions
+
+For cash expenses:
+1. Create a "Cash Wallet" asset account
+2. Transfer from your bank account to cash wallet when withdrawing
+3. Record cash expenses as withdrawals from the cash wallet
+
+### Shared Expenses
+
+For expenses shared with others:
+- Record the full amount you paid
+- Add a tag like `#shared` or `#split-with-roommate`
+- Use reports to see how much you're owed
+- Record reimbursements as deposits
+
+## Automation
+
+### Recurring Transactions
+
+Automate regular transactions with [Recurring Transactions](/features/recurring-transactions).
+
+### Rules
+
+Automate transaction categorization with [Rules](/features/rules).
+
+## Importing Transactions
+
+Import transactions from bank files:
+- CSV files from your bank
+- OFX/QFX files
+- Other financial software exports
+
+<Note>
+Import features require separate import tools or extensions. Check the Firefly III documentation for import setup.
+</Note>
+
+## Troubleshooting
+
+<Accordion title="Transaction not showing in reports">
+  Check:
+  - The transaction date falls within the report period
+  - The transaction type is included in the report
+  - The transaction is not marked as deleted
+</Accordion>
+
+<Accordion title="Can't edit a transaction">
+  Possible reasons:
+  - The transaction is locked due to reconciliation
+  - It's part of a recurring series (edit the recurrence instead)
+  - Browser cache issues (try refreshing)
+</Accordion>
+
+<Accordion title="Balance doesn't match after creating transaction">
+  Verify:
+  - The source and destination accounts are correct
+  - For transfers, both accounts are your asset accounts
+  - The transaction date is set correctly
+  - No duplicate transactions exist
+</Accordion>
+
+## Related Features
+
+- [Accounts](/features/accounts) - Set up accounts for transactions
+- [Budgets](/features/budgets) - Control spending with budgets
+- [Categories & Tags](/features/categories-tags) - Organize transactions
+- [Rules](/features/rules) - Automate transaction processing
+- [Recurring Transactions](/features/recurring-transactions) - Set up automatic transactions

@@ -1,0 +1,351 @@
+---
+title: Bills API
+description: Manage recurring bills and subscriptions
+---
+
+## Overview
+
+The Bills API (also called Subscriptions in some contexts) allows you to manage recurring expenses like rent, utilities, subscriptions, and other regular payments. Firefly III can automatically match transactions to bills based on configured rules.
+
+## List All Bills
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/bills" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/bills`
+
+### Query Parameters
+
+<ParamField query="page" type="integer">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="start" type="string">
+  Start date for paid dates (YYYY-MM-DD)
+</ParamField>
+
+<ParamField query="end" type="string">
+  End date for paid dates (YYYY-MM-DD)
+</ParamField>
+
+### Response Fields
+
+<ResponseField name="id" type="integer">
+  Bill ID
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of creation
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp of last update
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Bill name
+</ResponseField>
+
+<ResponseField name="object_has_currency_setting" type="boolean">
+  Always true for bills
+</ResponseField>
+
+<ResponseField name="currency_id" type="string">
+  Currency ID
+</ResponseField>
+
+<ResponseField name="currency_code" type="string">
+  Currency code
+</ResponseField>
+
+<ResponseField name="currency_name" type="string">
+  Currency name
+</ResponseField>
+
+<ResponseField name="currency_symbol" type="string">
+  Currency symbol
+</ResponseField>
+
+<ResponseField name="currency_decimal_places" type="integer">
+  Decimal places for currency
+</ResponseField>
+
+<ResponseField name="amount_min" type="string">
+  Minimum expected amount
+</ResponseField>
+
+<ResponseField name="pc_amount_min" type="string">
+  Minimum amount in primary currency
+</ResponseField>
+
+<ResponseField name="amount_max" type="string">
+  Maximum expected amount
+</ResponseField>
+
+<ResponseField name="pc_amount_max" type="string">
+  Maximum amount in primary currency
+</ResponseField>
+
+<ResponseField name="amount_avg" type="string">
+  Average amount
+</ResponseField>
+
+<ResponseField name="pc_amount_avg" type="string">
+  Average amount in primary currency
+</ResponseField>
+
+<ResponseField name="date" type="string">
+  Bill start date (ISO 8601)
+</ResponseField>
+
+<ResponseField name="end_date" type="string">
+  Bill end date (ISO 8601)
+</ResponseField>
+
+<ResponseField name="extension_date" type="string">
+  Extension date (ISO 8601)
+</ResponseField>
+
+<ResponseField name="repeat_freq" type="string">
+  Repeat frequency: `weekly`, `monthly`, `quarterly`, `half-year`, `yearly`
+</ResponseField>
+
+<ResponseField name="skip" type="integer">
+  Number of periods to skip (0-31)
+</ResponseField>
+
+<ResponseField name="active" type="boolean">
+  Whether the bill is active
+</ResponseField>
+
+<ResponseField name="order" type="integer">
+  Display order
+</ResponseField>
+
+<ResponseField name="notes" type="string">
+  Bill notes
+</ResponseField>
+
+<ResponseField name="object_group_id" type="string">
+  Object group ID if bill is in a group
+</ResponseField>
+
+<ResponseField name="object_group_order" type="integer">
+  Order within object group
+</ResponseField>
+
+<ResponseField name="object_group_title" type="string">
+  Object group title
+</ResponseField>
+
+<ResponseField name="paid_dates" type="array">
+  Array of dates when bill was paid
+</ResponseField>
+
+<ResponseField name="pay_dates" type="array">
+  Array of expected payment dates
+</ResponseField>
+
+<ResponseField name="next_expected_match" type="string">
+  Next expected match date (ISO 8601)
+</ResponseField>
+
+<ResponseField name="next_expected_match_diff" type="string">
+  Human-readable time until next match
+</ResponseField>
+
+## Create Bill
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://demo.firefly-iii.org/api/v1/bills" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Netflix Subscription",
+    "amount_min": "15.00",
+    "amount_max": "15.00",
+    "currency_code": "USD",
+    "date": "2024-01-15",
+    "repeat_freq": "monthly",
+    "skip": 0,
+    "active": true,
+    "notes": "Streaming subscription"
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `POST /v1/bills`
+
+### Request Body
+
+<ParamField body="name" type="string" required>
+  Bill name (1-255 characters, must be unique)
+</ParamField>
+
+<ParamField body="amount_min" type="string" required>
+  Minimum expected amount (positive number)
+</ParamField>
+
+<ParamField body="amount_max" type="string" required>
+  Maximum expected amount (must be ≥ amount_min)
+</ParamField>
+
+<ParamField body="currency_id" type="integer">
+  Currency ID (must exist in transaction_currencies)
+</ParamField>
+
+<ParamField body="currency_code" type="string">
+  Currency code (3-51 characters, must exist)
+</ParamField>
+
+<ParamField body="date" type="string" required>
+  Bill start date (YYYY-MM-DD, after 1970-01-02, before 2038-01-17)
+</ParamField>
+
+<ParamField body="end_date" type="string">
+  Bill end date (must be after `date`)
+</ParamField>
+
+<ParamField body="extension_date" type="string">
+  Extension date (must be after `date`)
+</ParamField>
+
+<ParamField body="repeat_freq" type="string" required>
+  Repeat frequency: `weekly`, `monthly`, `quarterly`, `half-year`, `yearly`
+</ParamField>
+
+<ParamField body="skip" type="integer" default="0">
+  Number of periods to skip (0-31)
+</ParamField>
+
+<ParamField body="active" type="boolean" default="true">
+  Whether the bill is active
+</ParamField>
+
+<ParamField body="order" type="integer">
+  Display order
+</ParamField>
+
+<ParamField body="notes" type="string">
+  Bill notes (max 32,768 characters)
+</ParamField>
+
+<ParamField body="object_group_id" type="integer">
+  Object group ID to associate bill with
+</ParamField>
+
+<ParamField body="object_group_title" type="string">
+  Object group title
+</ParamField>
+
+<Info>
+**Matching Transactions:**
+
+Firefly III will automatically attempt to match transactions to bills based on:
+- Amount falling within min/max range
+- Transaction date matching expected payment schedule
+- Description or account name patterns
+</Info>
+
+## Get Bill by ID
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/bills/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/bills/{id}`
+
+Returns the same response fields as the List endpoint.
+
+## Update Bill
+
+<CodeGroup>
+```bash cURL
+curl -X PUT "https://demo.firefly-iii.org/api/v1/bills/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Netflix Premium",
+    "amount_min": "17.99",
+    "amount_max": "17.99",
+    "notes": "Upgraded to premium plan"
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `PUT /v1/bills/{id}`
+
+Accepts the same parameters as Create Bill. All fields are optional.
+
+## Delete Bill
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE "https://demo.firefly-iii.org/api/v1/bills/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `DELETE /v1/bills/{id}`
+
+Deletes the bill. Associated transactions will no longer be linked to this bill.
+
+<Warning>
+Deleting a bill removes the bill association from transactions but does not delete the transactions themselves.
+</Warning>
+
+## Related Endpoints
+
+### Get Bill Attachments
+
+**Endpoint:** `GET /v1/bills/{id}/attachments`
+
+Returns all attachments for this bill.
+
+### Get Bill Rules
+
+**Endpoint:** `GET /v1/bills/{id}/rules`
+
+Returns all rules associated with this bill.
+
+### Get Bill Transactions
+
+**Endpoint:** `GET /v1/bills/{id}/transactions`
+
+Returns all transactions matched to this bill.
+
+### Query Parameters for Transactions
+
+<ParamField query="start" type="string">
+  Start date (YYYY-MM-DD)
+</ParamField>
+
+<ParamField query="end" type="string">
+  End date (YYYY-MM-DD)
+</ParamField>
+
+## Subscriptions Endpoints
+
+The `/v1/subscriptions` endpoints are aliases for `/v1/bills` endpoints and work identically:
+
+- `GET /v1/subscriptions` - List all subscriptions
+- `POST /v1/subscriptions` - Create subscription
+- `GET /v1/subscriptions/{id}` - Get subscription by ID
+- `PUT /v1/subscriptions/{id}` - Update subscription
+- `DELETE /v1/subscriptions/{id}` - Delete subscription
+- `GET /v1/subscriptions/{id}/attachments` - Get subscription attachments
+- `GET /v1/subscriptions/{id}/rules` - Get subscription rules
+- `GET /v1/subscriptions/{id}/transactions` - Get subscription transactions

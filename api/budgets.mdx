@@ -1,0 +1,315 @@
+---
+title: Budgets API
+description: Manage budgets and budget limits for expense tracking
+---
+
+## Overview
+
+The Budgets API allows you to create and manage budgets, set budget limits, and track spending against budgeted amounts. Budgets help you control expenses by allocating specific amounts for different categories.
+
+## List All Budgets
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/budgets" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/budgets`
+
+### Query Parameters
+
+<ParamField query="page" type="integer">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="start" type="string">
+  Start date for spent amounts (YYYY-MM-DD)
+</ParamField>
+
+<ParamField query="end" type="string">
+  End date for spent amounts (YYYY-MM-DD)
+</ParamField>
+
+### Response Fields
+
+<ResponseField name="id" type="string">
+  Budget ID
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of creation
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp of last update
+</ResponseField>
+
+<ResponseField name="active" type="boolean">
+  Whether the budget is active
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Budget name
+</ResponseField>
+
+<ResponseField name="order" type="integer">
+  Display order
+</ResponseField>
+
+<ResponseField name="notes" type="string">
+  Budget notes
+</ResponseField>
+
+<ResponseField name="auto_budget_type" type="string">
+  Auto-budget type: `reset`, `rollover`, `adjusted`, or null
+</ResponseField>
+
+<ResponseField name="auto_budget_period" type="string">
+  Auto-budget period: `daily`, `weekly`, `monthly`, `quarterly`, `half_year`, `yearly`
+</ResponseField>
+
+<ResponseField name="auto_budget_amount" type="string">
+  Amount for auto-budget
+</ResponseField>
+
+<ResponseField name="pc_auto_budget_amount" type="string">
+  Auto-budget amount in primary currency
+</ResponseField>
+
+<ResponseField name="object_has_currency_setting" type="boolean">
+  Whether budget has specific currency settings
+</ResponseField>
+
+<ResponseField name="currency_id" type="string">
+  Auto-budget currency ID
+</ResponseField>
+
+<ResponseField name="currency_code" type="string">
+  Currency code
+</ResponseField>
+
+<ResponseField name="currency_name" type="string">
+  Currency name
+</ResponseField>
+
+<ResponseField name="currency_symbol" type="string">
+  Currency symbol
+</ResponseField>
+
+<ResponseField name="currency_decimal_places" type="integer">
+  Decimal places for currency
+</ResponseField>
+
+<ResponseField name="spent" type="array">
+  Array of spent amounts per currency
+</ResponseField>
+
+<ResponseField name="pc_spent" type="array">
+  Array of spent amounts in primary currency
+</ResponseField>
+
+## Create Budget
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://demo.firefly-iii.org/api/v1/budgets" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Groceries",
+    "active": true,
+    "auto_budget_type": "reset",
+    "auto_budget_amount": "500.00",
+    "auto_budget_period": "monthly",
+    "auto_budget_currency_code": "USD",
+    "notes": "Monthly grocery budget"
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `POST /v1/budgets`
+
+### Request Body
+
+<ParamField body="name" type="string" required>
+  Budget name (1-255 characters, must be unique)
+</ParamField>
+
+<ParamField body="active" type="boolean" default="true">
+  Whether the budget is active
+</ParamField>
+
+<ParamField body="order" type="integer">
+  Display order for the budget
+</ParamField>
+
+<ParamField body="notes" type="string">
+  Budget notes (max 32,768 characters)
+</ParamField>
+
+<ParamField body="auto_budget_type" type="string">
+  Auto-budget type: `reset`, `rollover`, `adjusted`, or `none`
+</ParamField>
+
+<ParamField body="auto_budget_amount" type="string">
+  Amount for auto-budget (required if `auto_budget_type` is `reset`, `rollover`, or `adjusted`)
+</ParamField>
+
+<ParamField body="auto_budget_period" type="string">
+  Period: `daily`, `weekly`, `monthly`, `quarterly`, `half_year`, `yearly` (required if auto-budget type is set)
+</ParamField>
+
+<ParamField body="auto_budget_currency_id" type="integer">
+  Currency ID for auto-budget (must exist in transaction_currencies)
+</ParamField>
+
+<ParamField body="auto_budget_currency_code" type="string">
+  Currency code for auto-budget (must exist in transaction_currencies)
+</ParamField>
+
+<ParamField body="fire_webhooks" type="boolean" default="true">
+  Trigger webhooks for this budget
+</ParamField>
+
+<Info>
+**Auto-Budget Types:**
+- **reset**: Budget resets to the specified amount each period
+- **rollover**: Unused budget rolls over to the next period
+- **adjusted**: Budget adjusts based on actual spending
+- **none**: No automatic budget management
+</Info>
+
+## Get Budget by ID
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/budgets/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/budgets/{id}`
+
+Returns the same response fields as the List endpoint.
+
+## Update Budget
+
+<CodeGroup>
+```bash cURL
+curl -X PUT "https://demo.firefly-iii.org/api/v1/budgets/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated Groceries Budget",
+    "auto_budget_amount": "600.00",
+    "notes": "Increased for inflation"
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `PUT /v1/budgets/{id}`
+
+Accepts the same parameters as Create Budget. All fields are optional.
+
+## Delete Budget
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE "https://demo.firefly-iii.org/api/v1/budgets/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `DELETE /v1/budgets/{id}`
+
+Deletes the budget and all associated budget limits.
+
+<Warning>
+Deleting a budget does not delete transactions, but it removes the budget association from those transactions.
+</Warning>
+
+## Budget Limits
+
+### List Budget Limits
+
+**Endpoint:** `GET /v1/budgets/{budget}/limits`
+
+Returns all budget limits for a specific budget.
+
+### Create Budget Limit
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://demo.firefly-iii.org/api/v1/budgets/{budget}/limits" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "start": "2024-01-01",
+    "end": "2024-01-31",
+    "amount": "500.00",
+    "currency_code": "USD"
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `POST /v1/budgets/{budget}/limits`
+
+Creates a budget limit for a specific time period.
+
+### Get Budget Limit
+
+**Endpoint:** `GET /v1/budgets/{budget}/limits/{budgetLimit}`
+
+Returns details of a specific budget limit.
+
+### Update Budget Limit
+
+**Endpoint:** `PUT /v1/budgets/{budget}/limits/{budgetLimit}`
+
+Updates an existing budget limit.
+
+### Delete Budget Limit
+
+**Endpoint:** `DELETE /v1/budgets/{budget}/limits/{budgetLimit}`
+
+Deletes a budget limit.
+
+### Get Budget Limit Transactions
+
+**Endpoint:** `GET /v1/budgets/{budget}/limits/{budgetLimit}/transactions`
+
+Returns all transactions within a budget limit period.
+
+## Related Endpoints
+
+### Get Budget Transactions
+
+**Endpoint:** `GET /v1/budgets/{id}/transactions`
+
+Returns all transactions associated with this budget.
+
+### Get Budget Attachments
+
+**Endpoint:** `GET /v1/budgets/{id}/attachments`
+
+Returns all attachments for this budget.
+
+### Get Transactions Without Budget
+
+**Endpoint:** `GET /v1/budgets/transactions-without-budget`
+
+Returns all transactions that don't have a budget assigned.
+
+### List All Budget Limits
+
+**Endpoint:** `GET /v1/budget-limits`
+
+Returns all budget limits across all budgets.

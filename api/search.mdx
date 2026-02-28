@@ -1,0 +1,448 @@
+---
+title: Search API
+description: Search transactions and accounts using powerful query syntax
+---
+
+The Search API allows you to find transactions and accounts using flexible search queries and filters.
+
+## Overview
+
+Firefly III provides search endpoints for:
+- **Transactions** - Search through transaction groups with advanced query syntax
+- **Accounts** - Find accounts by name and properties
+
+Search results are paginated and return full resource objects in JSON API format.
+
+### Base Path
+```
+/api/v1/search
+```
+
+## Transaction Search
+
+Search transactions using natural language queries or specific field filters.
+
+### Search Transactions
+
+<CodeGroup>
+```bash Basic Search
+curl -X GET "https://your-firefly-instance.com/api/v1/search/transactions?query=groceries" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```bash Advanced Search
+curl -X GET "https://your-firefly-instance.com/api/v1/search/transactions?query=amount:>100%20category:food" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "data": [
+    {
+      "type": "transactions",
+      "id": "123",
+      "attributes": {
+        "group_title": "Grocery shopping",
+        "transactions": [
+          {
+            "transaction_journal_id": "456",
+            "type": "withdrawal",
+            "date": "2024-01-15T00:00:00+00:00",
+            "amount": "125.50",
+            "description": "Grocery shopping",
+            "source_name": "Checking Account",
+            "destination_name": "Supermarket",
+            "category_name": "Groceries"
+          }
+        ]
+      }
+    }
+  ],
+  "meta": {
+    "pagination": {
+      "total": 42,
+      "count": 50,
+      "per_page": 50,
+      "current_page": 1,
+      "total_pages": 1
+    }
+  },
+  "links": {
+    "self": "https://your-firefly-instance.com/api/v1/search/transactions?query=groceries&page=1",
+    "first": "https://your-firefly-instance.com/api/v1/search/transactions?query=groceries&page=1",
+    "last": "https://your-firefly-instance.com/api/v1/search/transactions?query=groceries&page=1"
+  }
+}
+```
+</CodeGroup>
+
+<ParamField query="query" type="string" required>
+  Search query string. Supports natural language and advanced query syntax.
+</ParamField>
+
+<ParamField query="page" type="integer" default="1">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="limit" type="integer" default="50">
+  Number of results per page (max: 65536)
+</ParamField>
+
+### Query Syntax
+
+Firefly III uses a powerful query parser that supports:
+
+#### Basic Text Search
+
+Search in description and notes:
+```
+groceries
+```
+
+#### Field-Specific Search
+
+Search specific fields:
+```
+amount:>100
+category:food
+account:checking
+date:2024-01-01
+```
+
+#### Operators
+
+| Operator | Description | Example |
+|----------|-------------|----------|
+| `:` | Equals | `category:groceries` |
+| `:>` | Greater than | `amount:>100` |
+| `:<` | Less than | `amount:<50` |
+| `:>=` | Greater or equal | `amount:>=100` |
+| `:<=` | Less or equal | `amount:<=50` |
+
+#### Boolean Logic
+
+Combine conditions:
+```
+amount:>100 category:food
+amount:<50 OR category:entertainment
+```
+
+#### Quotation Marks
+
+Exact phrase matching:
+```
+"monthly rent"
+category:"dining out"
+```
+
+#### Searchable Fields
+
+- `description` - Transaction description
+- `amount` - Transaction amount
+- `date` - Transaction date
+- `account` - Source or destination account
+- `category` - Category name
+- `budget` - Budget name
+- `tag` - Transaction tags
+- `notes` - Transaction notes
+- `external_id` - External identifier
+- `internal_reference` - Internal reference
+
+<Info>
+The query parser is powered by `gdbots/query-parser` library, supporting advanced search syntax.
+</Info>
+
+### Get Transaction Count
+
+Get the number of transactions matching search criteria without fetching full data.
+
+<CodeGroup>
+```bash Count by External ID
+curl -X GET "https://your-firefly-instance.com/api/v1/search/transactions/count?external_identifier=INV-2024-001" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```bash Count by Internal Reference
+curl -X GET "https://your-firefly-instance.com/api/v1/search/transactions/count?internal_reference=REF-123" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```bash Count by Description
+curl -X GET "https://your-firefly-instance.com/api/v1/search/transactions/count?description=rent" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```bash Count by Notes
+curl -X GET "https://your-firefly-instance.com/api/v1/search/transactions/count?notes=reimbursable" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "count": 15
+}
+```
+</CodeGroup>
+
+<ParamField query="external_identifier" type="string">
+  Search by external identifier metadata
+</ParamField>
+
+<ParamField query="internal_reference" type="string">
+  Search by internal reference metadata
+</ParamField>
+
+<ParamField query="description" type="string">
+  Search by transaction description (exact match)
+</ParamField>
+
+<ParamField query="notes" type="string">
+  Search in transaction notes (LIKE query)
+</ParamField>
+
+<ParamField query="include_deleted" type="boolean" default="false">
+  Include deleted transactions in the count
+</ParamField>
+
+<ResponseField name="count" type="integer">
+  Total number of matching transactions
+</ResponseField>
+
+<Note>
+The count endpoint is useful for validation before importing transactions or checking for duplicates.
+</Note>
+
+## Account Search
+
+Search for accounts by name and properties.
+
+### Search Accounts
+
+<CodeGroup>
+```bash Search Accounts
+curl -X GET "https://your-firefly-instance.com/api/v1/search/accounts?query=savings" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "data": [
+    {
+      "type": "accounts",
+      "id": "5",
+      "attributes": {
+        "name": "Savings Account",
+        "type": "asset",
+        "account_role": "savingAsset",
+        "currency_code": "USD",
+        "current_balance": "5000.00",
+        "active": true
+      }
+    },
+    {
+      "type": "accounts",
+      "id": "8",
+      "attributes": {
+        "name": "Emergency Savings",
+        "type": "asset",
+        "account_role": "savingAsset",
+        "currency_code": "USD",
+        "current_balance": "10000.00",
+        "active": true
+      }
+    }
+  ],
+  "meta": {
+    "pagination": {
+      "total": 2,
+      "count": 2,
+      "per_page": 50,
+      "current_page": 1,
+      "total_pages": 1
+    }
+  }
+}
+```
+</CodeGroup>
+
+<ParamField query="query" type="string" required>
+  Search query for account name
+</ParamField>
+
+<ParamField query="type" type="string">
+  Filter by account type (asset, expense, revenue, etc.)
+</ParamField>
+
+<ParamField query="page" type="integer" default="1">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="limit" type="integer" default="50">
+  Number of results per page
+</ParamField>
+
+## Search Examples
+
+### Find High-Value Transactions
+
+<CodeGroup>
+```bash Amount Filter
+curl -X GET "https://your-firefly-instance.com/api/v1/search/transactions?query=amount:>1000" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Search by Date Range
+
+<CodeGroup>
+```bash Date Range
+curl -X GET "https://your-firefly-instance.com/api/v1/search/transactions?query=date:>=2024-01-01%20date:<=2024-01-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Find Uncategorized Expenses
+
+<CodeGroup>
+```bash No Category
+curl -X GET "https://your-firefly-instance.com/api/v1/search/transactions?query=type:withdrawal%20category:null" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Search by External Reference
+
+<CodeGroup>
+```bash External ID
+curl -X GET "https://your-firefly-instance.com/api/v1/search/transactions?query=external_id:INV-2024-001" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Complex Query
+
+<CodeGroup>
+```bash Combined Filters
+curl -X GET "https://your-firefly-instance.com/api/v1/search/transactions?query=amount:>50%20amount:<200%20category:dining%20date:>=2024-01-01" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+## Response Format
+
+Search endpoints return standard JSON API formatted responses with:
+
+<ResponseField name="data" type="array">
+  Array of matching resources (transactions or accounts)
+</ResponseField>
+
+<ResponseField name="meta.pagination" type="object">
+  Pagination metadata including total count and page information
+</ResponseField>
+
+<ResponseField name="links" type="object">
+  HATEOAS links for pagination navigation
+</ResponseField>
+
+## Performance Tips
+
+<Warning>
+Complex queries on large datasets may be slow. Consider:
+- Adding date ranges to limit search scope
+- Using specific field searches instead of full-text
+- Implementing client-side result caching
+</Warning>
+
+### Optimize Searches
+
+1. **Use specific fields** - `description:rent` is faster than just `rent`
+2. **Limit date ranges** - Add date constraints for better performance
+3. **Use count endpoint** - Check result count before fetching full data
+4. **Paginate results** - Don't fetch all results at once
+
+## URL Encoding
+
+Remember to URL-encode query parameters:
+
+<CodeGroup>
+```bash Encoded Query
+# Instead of: query=amount:>100 category:food
+# Use:
+curl -X GET "https://your-firefly-instance.com/api/v1/search/transactions?query=amount%3A%3E100%20category%3Afood" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+## Search Limitations
+
+- Maximum page size: 65,536 results
+- No fuzzy matching (exact or wildcard only)
+- Case-insensitive text search
+- Boolean operators: AND (space), OR
+- No NOT operator support
+
+<Info>
+The search functionality is documented at `https://api-docs.firefly-iii.org/?urls.primaryName=2.0.0%20(v1)#/search/searchTransactions`
+</Info>
+
+## Use Cases
+
+### Duplicate Detection
+
+Find potentially duplicate transactions before import:
+
+<CodeGroup>
+```bash Check Duplicates
+curl -X GET "https://your-firefly-instance.com/api/v1/search/transactions/count?external_identifier=BANK-TX-12345" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Expense Analysis
+
+Find all dining expenses over $50:
+
+<CodeGroup>
+```bash Dining Analysis
+curl -X GET "https://your-firefly-instance.com/api/v1/search/transactions?query=category:dining%20amount:>50" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Account Lookup
+
+Find accounts by partial name:
+
+<CodeGroup>
+```bash Find Accounts
+curl -X GET "https://your-firefly-instance.com/api/v1/search/accounts?query=bank&type=asset" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Insights API" icon="lightbulb" href="/api/insights">
+    Get aggregated financial insights
+  </Card>
+  <Card title="Data Operations" icon="database" href="/api/data-operations">
+    Bulk operations and data management
+  </Card>
+</CardGroup>

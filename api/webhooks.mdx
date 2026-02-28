@@ -1,0 +1,544 @@
+---
+title: Webhooks API
+description: Configure webhooks to receive real-time notifications about financial events
+---
+
+Webhooks allow you to receive HTTP callbacks when specific events occur in Firefly III, enabling real-time integrations with external services.
+
+## Overview
+
+Firefly III webhooks send POST requests to your specified URL when configured triggers fire. Common use cases include:
+- Sending notifications to messaging platforms (Slack, Discord)
+- Triggering automation workflows
+- Syncing data with external systems
+- Real-time monitoring and alerts
+
+<Warning>
+Webhooks must be enabled in your Firefly III configuration. Check the `allow_webhooks` setting in your environment.
+</Warning>
+
+### Base Path
+```
+/api/v1/webhooks
+```
+
+## Webhook Management
+
+### List All Webhooks
+
+Retrieve all configured webhooks for your account.
+
+<CodeGroup>
+```bash List Webhooks
+curl -X GET "https://your-firefly-instance.com/api/v1/webhooks" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "data": [
+    {
+      "type": "webhooks",
+      "id": "1",
+      "attributes": {
+        "active": true,
+        "title": "Slack Notifications",
+        "secret": "your-webhook-secret",
+        "trigger": "STORE_TRANSACTION",
+        "response": "TRANSACTIONS",
+        "delivery": "JSON",
+        "url": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL",
+        "created_at": "2024-01-01T00:00:00+00:00",
+        "updated_at": "2024-01-01T00:00:00+00:00"
+      }
+    }
+  ],
+  "meta": {
+    "pagination": {
+      "total": 1,
+      "count": 1,
+      "per_page": 50,
+      "current_page": 1,
+      "total_pages": 1
+    }
+  }
+}
+```
+</CodeGroup>
+
+<ParamField query="page" type="integer" default="1">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="limit" type="integer" default="50">
+  Number of webhooks per page
+</ParamField>
+
+### Get Single Webhook
+
+Retrieve details of a specific webhook.
+
+<CodeGroup>
+```bash Get Webhook
+curl -X GET "https://your-firefly-instance.com/api/v1/webhooks/1" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Create Webhook
+
+Create a new webhook configuration.
+
+<CodeGroup>
+```bash Create Webhook
+curl -X POST "https://your-firefly-instance.com/api/v1/webhooks" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "active": true,
+    "title": "Transaction Notifications",
+    "trigger": "STORE_TRANSACTION",
+    "response": "TRANSACTIONS",
+    "delivery": "JSON",
+    "url": "https://your-service.com/webhook",
+    "secret": "your-secret-key"
+  }'
+```
+
+```json Response
+{
+  "data": {
+    "type": "webhooks",
+    "id": "2",
+    "attributes": {
+      "active": true,
+      "title": "Transaction Notifications",
+      "secret": "your-secret-key",
+      "trigger": "STORE_TRANSACTION",
+      "response": "TRANSACTIONS",
+      "delivery": "JSON",
+      "url": "https://your-service.com/webhook",
+      "created_at": "2024-01-15T10:30:00+00:00",
+      "updated_at": "2024-01-15T10:30:00+00:00"
+    }
+  }
+}
+```
+</CodeGroup>
+
+<ParamField body="title" type="string" required>
+  Descriptive name for the webhook
+</ParamField>
+
+<ParamField body="url" type="string" required>
+  Destination URL to receive webhook POST requests
+</ParamField>
+
+<ParamField body="trigger" type="string" required>
+  Event that triggers the webhook. Options: `STORE_TRANSACTION`, `UPDATE_TRANSACTION`, `DESTROY_TRANSACTION`
+</ParamField>
+
+<ParamField body="response" type="string" required>
+  Type of data to send. Options: `TRANSACTIONS`, `ACCOUNTS`, `NONE`
+</ParamField>
+
+<ParamField body="delivery" type="string" required>
+  Delivery format. Options: `JSON`, `FORM`
+</ParamField>
+
+<ParamField body="active" type="boolean" default="true">
+  Whether the webhook is active
+</ParamField>
+
+<ParamField body="secret" type="string">
+  Secret key for webhook signature validation
+</ParamField>
+
+### Update Webhook
+
+Modify an existing webhook.
+
+<CodeGroup>
+```bash Update Webhook
+curl -X PUT "https://your-firefly-instance.com/api/v1/webhooks/1" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "active": false,
+    "title": "Disabled Webhook"
+  }'
+```
+</CodeGroup>
+
+### Delete Webhook
+
+Remove a webhook configuration.
+
+<CodeGroup>
+```bash Delete Webhook
+curl -X DELETE "https://your-firefly-instance.com/api/v1/webhooks/1" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+Returns `204 No Content` on success.
+
+## Webhook Triggers
+
+Webhooks can be triggered by these transaction events:
+
+### STORE_TRANSACTION
+
+Fired when a new transaction is created.
+
+<CodeGroup>
+```json Payload Example
+{
+  "user_id": 1,
+  "trigger": "STORE_TRANSACTION",
+  "url": "https://your-firefly-instance.com/transactions/show/123",
+  "version": "2.0.0",
+  "content": {
+    "id": "123",
+    "type": "withdrawal",
+    "amount": "50.00",
+    "description": "Grocery shopping",
+    "date": "2024-01-15",
+    "source_name": "Checking Account",
+    "destination_name": "Supermarket"
+  }
+}
+```
+</CodeGroup>
+
+### UPDATE_TRANSACTION
+
+Fired when an existing transaction is modified.
+
+### DESTROY_TRANSACTION
+
+Fired when a transaction is deleted.
+
+## Manual Trigger
+
+Manually trigger a webhook for testing or specific transaction.
+
+### Trigger Webhook for Transaction
+
+<CodeGroup>
+```bash Manual Trigger
+curl -X POST "https://your-firefly-instance.com/api/v1/webhooks/1/trigger-transaction/123" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+Returns `204 No Content` and sends webhook message.
+
+<Info>
+This endpoint is useful for testing webhook configurations without creating/modifying actual transactions.
+</Info>
+
+### Submit Webhook Messages
+
+Force sending of pending webhook messages.
+
+<CodeGroup>
+```bash Submit Messages
+curl -X POST "https://your-firefly-instance.com/api/v1/webhooks/1/submit" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+## Webhook Messages
+
+View the history of webhook deliveries.
+
+### List Webhook Messages
+
+Get all messages sent for a webhook.
+
+<CodeGroup>
+```bash List Messages
+curl -X GET "https://your-firefly-instance.com/api/v1/webhooks/1/messages" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "data": [
+    {
+      "type": "webhook_messages",
+      "id": "456",
+      "attributes": {
+        "sent": true,
+        "errored": false,
+        "webhook_id": "1",
+        "message": "{\"user_id\":1,...}",
+        "created_at": "2024-01-15T10:35:00+00:00",
+        "updated_at": "2024-01-15T10:35:01+00:00"
+      }
+    }
+  ]
+}
+```
+</CodeGroup>
+
+### Get Single Message
+
+<CodeGroup>
+```bash Get Message
+curl -X GET "https://your-firefly-instance.com/api/v1/webhooks/1/messages/456" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Delete Message
+
+<CodeGroup>
+```bash Delete Message
+curl -X DELETE "https://your-firefly-instance.com/api/v1/webhooks/1/messages/456" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+## Webhook Attempts
+
+View delivery attempts for webhook messages (includes retries).
+
+### List Message Attempts
+
+<CodeGroup>
+```bash List Attempts
+curl -X GET "https://your-firefly-instance.com/api/v1/webhooks/1/messages/456/attempts" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+{
+  "data": [
+    {
+      "type": "webhook_attempts",
+      "id": "789",
+      "attributes": {
+        "webhook_message_id": "456",
+        "status_code": 200,
+        "logs": "Successfully delivered",
+        "response": "{\"ok\":true}",
+        "created_at": "2024-01-15T10:35:01+00:00"
+      }
+    }
+  ]
+}
+```
+</CodeGroup>
+
+### Get Single Attempt
+
+<CodeGroup>
+```bash Get Attempt
+curl -X GET "https://your-firefly-instance.com/api/v1/webhooks/1/messages/456/attempts/789" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Delete Attempt
+
+<CodeGroup>
+```bash Delete Attempt
+curl -X DELETE "https://your-firefly-instance.com/api/v1/webhooks/1/messages/456/attempts/789" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+## Webhook Payload Format
+
+### JSON Delivery
+
+When `delivery` is set to `JSON`, webhooks send:
+
+<CodeGroup>
+```json JSON Payload
+{
+  "user_id": 1,
+  "trigger": "STORE_TRANSACTION",
+  "url": "https://your-firefly-instance.com/transactions/show/123",
+  "version": "2.0.0",
+  "content": {
+    "id": "123",
+    "created_at": "2024-01-15T10:30:00+00:00",
+    "updated_at": "2024-01-15T10:30:00+00:00",
+    "transactions": [
+      {
+        "transaction_journal_id": "456",
+        "type": "withdrawal",
+        "date": "2024-01-15T00:00:00+00:00",
+        "amount": "50.00",
+        "description": "Grocery shopping",
+        "source_id": "1",
+        "source_name": "Checking Account",
+        "destination_id": "12",
+        "destination_name": "Supermarket",
+        "category_name": "Groceries",
+        "budget_name": "Monthly Budget"
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+### Form Delivery
+
+When `delivery` is set to `FORM`, data is sent as `application/x-www-form-urlencoded`.
+
+## Security
+
+### Webhook Signatures
+
+Use the `secret` field to validate webhook authenticity:
+
+<CodeGroup>
+```python Verify Signature (Python)
+import hmac
+import hashlib
+
+def verify_webhook(secret, payload, signature):
+    expected = hmac.new(
+        secret.encode('utf-8'),
+        payload.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature)
+```
+
+```javascript Verify Signature (Node.js)
+const crypto = require('crypto');
+
+function verifyWebhook(secret, payload, signature) {
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+  return crypto.timingSafeEqual(
+    Buffer.from(expected),
+    Buffer.from(signature)
+  );
+}
+```
+</CodeGroup>
+
+<Warning>
+Always validate webhook signatures to prevent unauthorized requests to your endpoint.
+</Warning>
+
+### HTTPS Required
+
+Webhook URLs should use HTTPS to protect data in transit.
+
+## Best Practices
+
+1. **Use HTTPS** - Always configure webhook URLs with HTTPS
+2. **Validate signatures** - Verify webhook authenticity using the secret
+3. **Respond quickly** - Return 200 OK within 5 seconds to avoid retries
+4. **Handle idempotency** - Process webhook messages idempotently
+5. **Monitor failures** - Check webhook attempts for delivery issues
+6. **Test thoroughly** - Use manual trigger endpoint for testing
+
+## Error Handling
+
+### Webhook Disabled
+
+```json
+{
+  "message": "Webhooks are not enabled."
+}
+```
+
+Webhooks are disabled in the configuration. Enable with:
+```bash
+allow_webhooks=true
+```
+
+### Invalid Configuration
+
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "url": ["The url must be a valid URL."]
+  }
+}
+```
+
+## Retry Policy
+
+Firefly III automatically retries failed webhook deliveries:
+- Failed requests (non-2xx status) are retried
+- View retry attempts in webhook attempts endpoint
+- Configure retry behavior in your Firefly III settings
+
+<Info>
+Webhook endpoint documentation: `https://api-docs.firefly-iii.org/?urls.primaryName=2.0.0%20(v1)#/webhooks`
+</Info>
+
+## Use Cases
+
+### Slack Notifications
+
+<CodeGroup>
+```bash Slack Webhook
+curl -X POST "https://your-firefly-instance.com/api/v1/webhooks" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Slack Transaction Alerts",
+    "trigger": "STORE_TRANSACTION",
+    "response": "TRANSACTIONS",
+    "delivery": "JSON",
+    "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+    "active": true
+  }'
+```
+</CodeGroup>
+
+### Discord Integration
+
+<CodeGroup>
+```bash Discord Webhook
+curl -X POST "https://your-firefly-instance.com/api/v1/webhooks" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Discord Notifications",
+    "trigger": "STORE_TRANSACTION",
+    "response": "TRANSACTIONS",
+    "delivery": "JSON",
+    "url": "https://discord.com/api/webhooks/YOUR/WEBHOOK",
+    "active": true
+  }'
+```
+</CodeGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Data Operations" icon="database" href="/api/data-operations">
+    Bulk operations and data export
+  </Card>
+  <Card title="Search API" icon="magnifying-glass" href="/api/search">
+    Search transactions and accounts
+  </Card>
+</CardGroup>

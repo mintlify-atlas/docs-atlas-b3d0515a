@@ -1,0 +1,342 @@
+---
+title: Webhooks
+description: Configure webhooks to integrate Firefly III with external services
+---
+
+Webhooks allow Firefly III to send real-time notifications to external services when certain events occur, enabling powerful integrations and automation.
+
+## Overview
+
+Webhooks in Firefly III can notify external services about:
+- Transaction creation, updates, and deletion
+- Budget creation, updates, and deletion
+- Budget limit changes
+
+<Info>Webhooks are sent as HTTP POST requests with JSON payloads to URLs you configure</Info>
+
+## Webhook triggers
+
+Firefly III supports the following webhook triggers:
+
+<CardGroup cols={2}>
+  <Card title="Transaction events" icon="receipt">
+    - `STORE_TRANSACTION`: New transaction created
+    - `UPDATE_TRANSACTION`: Transaction updated
+    - `DESTROY_TRANSACTION`: Transaction deleted
+  </Card>
+  <Card title="Budget events" icon="wallet">
+    - `STORE_BUDGET`: New budget created
+    - `UPDATE_BUDGET`: Budget updated
+    - `DESTROY_BUDGET`: Budget deleted
+    - `STORE_UPDATE_BUDGET_LIMIT`: Budget limit changed
+  </Card>
+</CardGroup>
+
+## Creating webhooks
+
+### Via web interface
+
+<Steps>
+  <Step title="Navigate to webhooks">
+    Go to **Automation** > **Webhooks** in the main menu
+  </Step>
+  
+  <Step title="Create new webhook">
+    Click **Create new webhook**
+  </Step>
+  
+  <Step title="Configure webhook">
+    Fill in the webhook details:
+    - **Title**: Descriptive name for the webhook
+    - **Trigger**: Select which events should trigger this webhook
+    - **URL**: The endpoint that will receive the webhook POST requests
+    - **Active**: Enable or disable the webhook
+    - **Delivery**: Choose delivery method (JSON recommended)
+  </Step>
+  
+  <Step title="Save webhook">
+    Click **Submit** to create the webhook
+  </Step>
+</Steps>
+
+### Via API
+
+```bash
+curl -X POST "https://your-firefly.local/api/v1/webhooks" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Transaction Notifier",
+    "trigger": "STORE_TRANSACTION",
+    "url": "https://your-service.com/webhook",
+    "active": true,
+    "response": "RESPONSE",
+    "delivery": "JSON"
+  }'
+```
+
+## Webhook payload
+
+When a webhook is triggered, Firefly III sends a POST request with a JSON payload:
+
+```json
+{
+  "uuid": "unique-message-id",
+  "user_id": 1,
+  "trigger": "STORE_TRANSACTION",
+  "url": "https://your-service.com/webhook",
+  "version": "2.0",
+  "content": {
+    "id": "123",
+    "type": "transactions",
+    "attributes": {
+      "created_at": "2024-01-01T00:00:00+00:00",
+      "updated_at": "2024-01-01T00:00:00+00:00",
+      "description": "Groceries",
+      "type": "withdrawal",
+      "amount": "50.00",
+      "currency_code": "EUR"
+    }
+  }
+}
+```
+
+### Payload structure
+
+<ResponseField name="uuid" type="string">
+  Unique identifier for this webhook message
+</ResponseField>
+
+<ResponseField name="user_id" type="integer">
+  ID of the user who triggered the event
+</ResponseField>
+
+<ResponseField name="trigger" type="string">
+  The event type that triggered this webhook (e.g., "STORE_TRANSACTION")
+</ResponseField>
+
+<ResponseField name="url" type="string">
+  The webhook URL that received this message
+</ResponseField>
+
+<ResponseField name="version" type="string">
+  Webhook payload version (currently "2.0")
+</ResponseField>
+
+<ResponseField name="content" type="object">
+  The actual data object (transaction, budget, etc.) that triggered the webhook
+</ResponseField>
+
+## Webhook delivery
+
+Firefly III handles webhook delivery with these features:
+
+### Delivery options
+
+<Tabs>
+  <Tab title="JSON">
+    **Recommended**: Sends the full object as JSON
+    - Complete transaction/budget data
+    - Easy to parse
+    - Includes all relationships
+  </Tab>
+  
+  <Tab title="Response">
+    Sends only essential data
+    - Lighter payload
+    - Faster delivery
+    - May require additional API calls
+  </Tab>
+</Tabs>
+
+### Retry logic
+
+Firefly III automatically retries failed webhook deliveries:
+
+1. **Immediate attempt**: First delivery attempt
+2. **Retry 1**: After 1 minute
+3. **Retry 2**: After 5 minutes
+4. **Retry 3**: After 15 minutes
+5. **Retry 4**: After 1 hour
+
+<Warning>After 5 failed attempts, the webhook message is marked as failed and will not be retried</Warning>
+
+### Webhook attempts
+
+Each delivery attempt is logged with:
+- HTTP status code
+- Response body
+- Timestamp
+- Success/failure status
+
+You can view attempt history in the webhook details page.
+
+## Security
+
+### HTTPS recommended
+
+<Warning>Always use HTTPS endpoints for webhooks to ensure data is encrypted in transit</Warning>
+
+### Webhook verification
+
+To verify webhooks are from your Firefly III instance:
+
+1. **Check source IP**: Whitelist your Firefly III server's IP
+2. **Use unique URLs**: Generate random URLs for each webhook
+3. **Verify payload**: Check the `uuid` and `user_id` match expectations
+
+<Tip>Consider implementing a shared secret or signature verification in your webhook receiver for additional security</Tip>
+
+## Testing webhooks
+
+Before deploying webhooks to production:
+
+### Test with webhook.site
+
+<Steps>
+  <Step title="Generate test URL">
+    Visit [webhook.site](https://webhook.site) and copy the unique URL
+  </Step>
+  
+  <Step title="Create test webhook">
+    Create a webhook in Firefly III using the webhook.site URL
+  </Step>
+  
+  <Step title="Trigger event">
+    Create a test transaction or budget
+  </Step>
+  
+  <Step title="Verify payload">
+    Check webhook.site to see the received payload
+  </Step>
+</Steps>
+
+### Manual trigger via API
+
+You can manually trigger a webhook for testing:
+
+```bash
+curl -X POST "https://your-firefly.local/api/v1/webhooks/{id}/trigger" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## Managing webhooks
+
+### Viewing webhook messages
+
+To see all webhook messages and their delivery status:
+
+1. Go to **Automation** > **Webhooks**
+2. Click on a webhook to view its details
+3. Navigate to the **Messages** tab
+
+Here you can see:
+- All triggered events
+- Delivery status
+- Response codes
+- Attempt history
+
+### Disabling webhooks
+
+To temporarily disable a webhook without deleting it:
+
+1. Edit the webhook
+2. Uncheck **Active**
+3. Save changes
+
+<Info>Disabled webhooks will not send any messages but their configuration is preserved</Info>
+
+### Deleting webhooks
+
+<Warning>Deleting a webhook also deletes all associated messages and attempt logs</Warning>
+
+## Use cases
+
+<AccordionGroup>
+  <Accordion title="Slack notifications">
+    Send Slack messages when large transactions are created:
+    
+    1. Create a Slack incoming webhook
+    2. Create a Firefly III webhook with `STORE_TRANSACTION` trigger
+    3. Use a middleware service to format and forward to Slack
+  </Accordion>
+  
+  <Accordion title="Budget alerts">
+    Get notified when budgets are exceeded:
+    
+    1. Set up webhook for `STORE_UPDATE_BUDGET_LIMIT`
+    2. Have your service check if spending exceeds limit
+    3. Send alert via email/SMS/push notification
+  </Accordion>
+  
+  <Accordion title="External analytics">
+    Send transaction data to analytics platforms:
+    
+    1. Create webhook for all transaction events
+    2. Forward data to your analytics service
+    3. Build custom dashboards and insights
+  </Accordion>
+  
+  <Accordion title="Automated workflows">
+    Trigger external automations:
+    
+    1. Use webhooks to notify workflow engines (Zapier, n8n, etc.)
+    2. Create complex multi-step automations
+    3. Integrate with other financial services
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<Accordion title="Webhooks not firing">
+  **Problem**: Webhook events are not being sent
+  
+  **Solutions**:
+  - Check webhook is **Active**
+  - Verify trigger matches the event type
+  - Check Firefly III logs for errors
+  - Ensure URL is accessible from your server
+</Accordion>
+
+<Accordion title="Failed deliveries">
+  **Problem**: Webhooks failing to deliver
+  
+  **Solutions**:
+  - Check target URL is correct and accessible
+  - Verify receiving server is responding with 2xx status codes
+  - Check for SSL/TLS certificate issues
+  - Review firewall rules
+</Accordion>
+
+<Accordion title="Missing data in payload">
+  **Problem**: Webhook payload doesn't include expected data
+  
+  **Solutions**:
+  - Ensure you're using JSON delivery for full data
+  - Check API version compatibility
+  - Verify the object type matches webhook trigger
+</Accordion>
+
+## API reference
+
+For complete webhook API documentation, see:
+- [Webhooks API](/api/webhooks) - Full CRUD operations
+- [Webhook Messages](/api/webhooks#webhook-messages) - View message history
+- [Manual Triggers](/api/webhooks#trigger-webhook) - Test webhooks
+
+## Related features
+
+<CardGroup cols={2}>
+  <Card title="Rules" icon="gears" href="/features/rules">
+    Automate actions within Firefly III
+  </Card>
+  <Card title="API" icon="code" href="/api/overview">
+    Integrate with external services
+  </Card>
+  <Card title="Recurring transactions" icon="rotate" href="/features/recurring-transactions">
+    Automate transaction creation
+  </Card>
+  <Card title="Automation" icon="robot" href="/advanced/automation">
+    Overview of all automation features
+  </Card>
+</CardGroup>

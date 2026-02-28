@@ -1,0 +1,535 @@
+---
+title: Insights API
+description: Get financial insights and analytics for expenses, income, and transfers
+---
+
+The Insights API provides analytical data about your financial transactions, broken down by various dimensions like accounts, categories, budgets, bills, and tags.
+
+## Overview
+
+Insights are available for three transaction types:
+- **Expenses** (`/api/v1/insight/expense/*`)
+- **Income** (`/api/v1/insight/income/*`)
+- **Transfers** (`/api/v1/insight/transfer/*`)
+
+Each insight endpoint returns summarized financial data grouped by a specific dimension (accounts, categories, etc.) for a given date range.
+
+<Info>
+All insight endpoints require date range parameters (`start` and `end`) and return data grouped by the specified dimension with currency information.
+</Info>
+
+## Expense Insights
+
+Analyze your spending patterns across different dimensions.
+
+### Base Path
+```
+/api/v1/insight/expense
+```
+
+### Get Expenses by Expense Account
+
+View expenses grouped by destination expense accounts.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/expense/expense?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+[
+  {
+    "id": "12",
+    "name": "Grocery Store",
+    "difference": "1250.50",
+    "difference_float": 1250.50,
+    "currency_id": "1",
+    "currency_code": "USD"
+  },
+  {
+    "id": "15",
+    "name": "Amazon",
+    "difference": "850.25",
+    "difference_float": 850.25,
+    "currency_id": "1",
+    "currency_code": "USD"
+  }
+]
+```
+</CodeGroup>
+
+<ParamField query="start" type="date" required>
+  Start date in `YYYY-MM-DD` format
+</ParamField>
+
+<ParamField query="end" type="date" required>
+  End date in `YYYY-MM-DD` format
+</ParamField>
+
+<ParamField query="accounts" type="string">
+  Comma-separated list of asset account IDs to filter
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Expense account ID
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Expense account name
+</ResponseField>
+
+<ResponseField name="difference" type="string">
+  Total expense amount as string
+</ResponseField>
+
+<ResponseField name="difference_float" type="number">
+  Total expense amount as float
+</ResponseField>
+
+<ResponseField name="currency_id" type="string">
+  Currency ID
+</ResponseField>
+
+<ResponseField name="currency_code" type="string">
+  Currency code (e.g., USD, EUR)
+</ResponseField>
+
+### Get Expenses by Asset Account
+
+View expenses grouped by source asset accounts (where money came from).
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/expense/asset?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Total Expenses
+
+Get total expenses for the period.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/expense/total?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Expenses by Bill
+
+View expenses grouped by associated bills.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/expense/bill?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Expenses Without Bill
+
+View expenses that are not associated with any bill.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/expense/no-bill?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Expenses by Budget
+
+View expenses grouped by budget.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/expense/budget?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Expenses Without Budget
+
+View expenses that are not assigned to any budget.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/expense/no-budget?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Expenses by Category
+
+View expenses grouped by category.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/expense/category?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Expenses Without Category
+
+View expenses that have no category assigned.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/expense/no-category?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Expenses by Tag
+
+View expenses grouped by tag.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/expense/tag?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Expenses Without Tag
+
+View expenses that have no tags.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/expense/no-tag?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+## Income Insights
+
+Analyze your income patterns across different dimensions.
+
+### Base Path
+```
+/api/v1/insight/income
+```
+
+### Get Income by Revenue Account
+
+View income grouped by source revenue accounts.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/income/revenue?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+[
+  {
+    "id": "8",
+    "name": "Salary",
+    "difference": "5000.00",
+    "difference_float": 5000.00,
+    "currency_id": "1",
+    "currency_code": "USD"
+  },
+  {
+    "id": "9",
+    "name": "Freelance Work",
+    "difference": "1200.00",
+    "difference_float": 1200.00,
+    "currency_id": "1",
+    "currency_code": "USD"
+  }
+]
+```
+</CodeGroup>
+
+### Get Income by Asset Account
+
+View income grouped by destination asset accounts (where money went).
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/income/asset?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Total Income
+
+Get total income for the period.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/income/total?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Income by Category
+
+View income grouped by category.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/income/category?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Income Without Category
+
+View income that has no category assigned.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/income/no-category?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Income by Tag
+
+View income grouped by tag.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/income/tag?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Income Without Tag
+
+View income that has no tags.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/income/no-tag?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+## Transfer Insights
+
+Analyze transfers between your accounts.
+
+### Base Path
+```
+/api/v1/insight/transfer
+```
+
+### Get Transfers by Asset Account
+
+View transfers grouped by asset accounts.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/transfer/asset?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+```json Response
+[
+  {
+    "id": "3",
+    "name": "Savings Account",
+    "difference": "500.00",
+    "difference_float": 500.00,
+    "currency_id": "1",
+    "currency_code": "USD"
+  }
+]
+```
+</CodeGroup>
+
+### Get Transfers by Category
+
+View transfers grouped by category.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/transfer/category?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Transfers Without Category
+
+View transfers that have no category assigned.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/transfer/no-category?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Transfers by Tag
+
+View transfers grouped by tag.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/transfer/tag?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Transfers Without Tag
+
+View transfers that have no tags.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/transfer/no-tag?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Get Total Transfers
+
+Get total transfers for the period.
+
+<CodeGroup>
+```bash Request
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/transfer/total?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+## Common Parameters
+
+All insight endpoints accept these parameters:
+
+<ParamField query="start" type="date" required>
+  Start date for the analysis period (format: `YYYY-MM-DD`)
+</ParamField>
+
+<ParamField query="end" type="date" required>
+  End date for the analysis period (format: `YYYY-MM-DD`)
+</ParamField>
+
+<ParamField query="accounts" type="string">
+  Comma-separated list of account IDs to filter results. Only transactions involving these accounts will be included.
+</ParamField>
+
+## Response Format
+
+All insight endpoints return an array of objects with this structure:
+
+<ResponseField name="id" type="string">
+  ID of the grouped entity (account, category, tag, etc.)
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Name of the grouped entity
+</ResponseField>
+
+<ResponseField name="difference" type="string">
+  Total amount as a string for precise decimal handling
+</ResponseField>
+
+<ResponseField name="difference_float" type="number">
+  Total amount as a float for easier numerical operations
+</ResponseField>
+
+<ResponseField name="currency_id" type="string">
+  ID of the currency
+</ResponseField>
+
+<ResponseField name="currency_code" type="string">
+  ISO currency code (USD, EUR, GBP, etc.)
+</ResponseField>
+
+<Note>
+The `difference` field is returned as both a string and float. Use the string value for precise decimal arithmetic to avoid floating-point precision issues.
+</Note>
+
+## Use Cases
+
+### Monthly Expense Analysis
+
+Analyze spending by category for a specific month:
+
+<CodeGroup>
+```bash Category Breakdown
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/expense/category?start=2024-11-01&end=2024-11-30" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Budget vs Actual
+
+Compare budgeted vs actual spending:
+
+<CodeGroup>
+```bash Budget Analysis
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/expense/budget?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+### Income Sources
+
+Identify your income sources:
+
+<CodeGroup>
+```bash Income Analysis
+curl -X GET "https://your-firefly-instance.com/api/v1/insight/income/revenue?start=2024-01-01&end=2024-12-31" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</CodeGroup>
+
+## Future Enhancements
+
+The following features are planned for future versions:
+
+- Insights by object group
+- Insights by recurrence
+- Currency-specific filtering
+- Net worth tracking via insights
+
+<Warning>
+Insight data is calculated in real-time and may take longer for large date ranges or accounts with many transactions.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Charts API" icon="chart-line" href="/api/charts">
+    Get chart-ready data for visualization
+  </Card>
+  <Card title="Search API" icon="magnifying-glass" href="/api/search">
+    Search and filter transactions
+  </Card>
+</CardGroup>

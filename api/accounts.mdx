@@ -1,0 +1,351 @@
+---
+title: Accounts API
+description: Manage asset, expense, revenue, and liability accounts
+---
+
+## Overview
+
+The Accounts API allows you to manage all types of accounts in Firefly III, including asset accounts, expense accounts, revenue accounts, and liability accounts.
+
+## List All Accounts
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/accounts" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/accounts`
+
+### Query Parameters
+
+<ParamField query="page" type="integer">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="type" type="string">
+  Filter by account type: `asset`, `expense`, `revenue`, `cash`, `liability`, `liabilities`, `initial-balance`, `reconciliation`
+</ParamField>
+
+### Response Fields
+
+<ResponseField name="id" type="string">
+  Unique identifier for the account
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of creation
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp of last update
+</ResponseField>
+
+<ResponseField name="active" type="boolean">
+  Whether the account is active
+</ResponseField>
+
+<ResponseField name="order" type="integer">
+  Display order for asset and liability accounts
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Account name
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  Account type (lowercase)
+</ResponseField>
+
+<ResponseField name="account_role" type="string">
+  For asset accounts: `defaultAsset`, `sharedAsset`, `savingAsset`, `ccAsset`, or `cashWalletAsset`
+</ResponseField>
+
+<ResponseField name="currency_id" type="string">
+  ID of the account's currency
+</ResponseField>
+
+<ResponseField name="currency_code" type="string">
+  Currency code (e.g., USD, EUR)
+</ResponseField>
+
+<ResponseField name="currency_symbol" type="string">
+  Currency symbol (e.g., $, €)
+</ResponseField>
+
+<ResponseField name="currency_decimal_places" type="integer">
+  Number of decimal places for the currency
+</ResponseField>
+
+<ResponseField name="current_balance" type="string">
+  Current account balance
+</ResponseField>
+
+<ResponseField name="opening_balance" type="string">
+  Opening balance (for asset and liability accounts)
+</ResponseField>
+
+<ResponseField name="opening_balance_date" type="string">
+  Date of opening balance
+</ResponseField>
+
+<ResponseField name="virtual_balance" type="string">
+  Virtual balance offset
+</ResponseField>
+
+<ResponseField name="iban" type="string">
+  International Bank Account Number
+</ResponseField>
+
+<ResponseField name="bic" type="string">
+  Bank Identifier Code
+</ResponseField>
+
+<ResponseField name="account_number" type="string">
+  Account number
+</ResponseField>
+
+<ResponseField name="notes" type="string">
+  Account notes
+</ResponseField>
+
+<ResponseField name="latitude" type="number">
+  Geographic latitude
+</ResponseField>
+
+<ResponseField name="longitude" type="number">
+  Geographic longitude
+</ResponseField>
+
+<ResponseField name="zoom_level" type="integer">
+  Map zoom level
+</ResponseField>
+
+<ResponseField name="include_net_worth" type="boolean">
+  Whether to include in net worth calculations
+</ResponseField>
+
+<ResponseField name="liability_type" type="string">
+  For liabilities: `loan`, `debt`, or `mortgage`
+</ResponseField>
+
+<ResponseField name="liability_direction" type="string">
+  For liabilities: `credit` or `debit`
+</ResponseField>
+
+<ResponseField name="interest" type="string">
+  Interest rate percentage
+</ResponseField>
+
+<ResponseField name="interest_period" type="string">
+  Interest calculation period
+</ResponseField>
+
+## Create Account
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://demo.firefly-iii.org/api/v1/accounts" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Savings Account",
+    "type": "asset",
+    "account_role": "savingAsset",
+    "currency_code": "USD",
+    "opening_balance": "1000.00",
+    "opening_balance_date": "2024-01-01",
+    "active": true,
+    "include_net_worth": true
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `POST /v1/accounts`
+
+### Request Body
+
+<ParamField body="name" type="string" required>
+  Account name (1-1024 characters, must be unique)
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Account type: `asset`, `expense`, `revenue`, `cash`, `liability`, `liabilities`, `initial-balance`, `reconciliation`
+</ParamField>
+
+<ParamField body="iban" type="string">
+  Valid IBAN (must be unique for the account type)
+</ParamField>
+
+<ParamField body="bic" type="string">
+  Valid BIC code
+</ParamField>
+
+<ParamField body="account_number" type="string">
+  Account number (1-255 characters, must be unique for the account type)
+</ParamField>
+
+<ParamField body="opening_balance" type="string">
+  Opening balance (required if `opening_balance_date` is provided)
+</ParamField>
+
+<ParamField body="opening_balance_date" type="string">
+  Date in YYYY-MM-DD format (required if `opening_balance` is provided)
+</ParamField>
+
+<ParamField body="virtual_balance" type="string">
+  Virtual balance amount
+</ParamField>
+
+<ParamField body="order" type="integer">
+  Display order
+</ParamField>
+
+<ParamField body="currency_id" type="integer">
+  Currency ID (must exist in transaction_currencies)
+</ParamField>
+
+<ParamField body="currency_code" type="string">
+  3-character currency code (must exist in transaction_currencies)
+</ParamField>
+
+<ParamField body="active" type="boolean" default="true">
+  Whether the account is active
+</ParamField>
+
+<ParamField body="include_net_worth" type="boolean" default="true">
+  Include in net worth calculations
+</ParamField>
+
+<ParamField body="account_role" type="string">
+  Required for asset accounts: `defaultAsset`, `sharedAsset`, `savingAsset`, `ccAsset`, or `cashWalletAsset`
+</ParamField>
+
+<ParamField body="credit_card_type" type="string">
+  Required if `account_role` is `ccAsset`: `monthlyFull` or other credit card types
+</ParamField>
+
+<ParamField body="monthly_payment_date" type="string">
+  Required if `account_role` is `ccAsset`: date in YYYY-MM-DD format
+</ParamField>
+
+<ParamField body="liability_type" type="string">
+  Required if `type` is `liability` or `liabilities`: `loan`, `debt`, or `mortgage`
+</ParamField>
+
+<ParamField body="liability_direction" type="string">
+  Required if `type` is `liability` or `liabilities`: `credit` or `debit`
+</ParamField>
+
+<ParamField body="liability_amount" type="string">
+  Initial liability amount (required with `liability_start_date`)
+</ParamField>
+
+<ParamField body="liability_start_date" type="string">
+  Liability start date (required with `liability_amount`)
+</ParamField>
+
+<ParamField body="interest" type="string">
+  Interest rate percentage (0-100)
+</ParamField>
+
+<ParamField body="interest_period" type="string">
+  Interest period from configured options
+</ParamField>
+
+<ParamField body="notes" type="string">
+  Account notes (max 32,768 characters)
+</ParamField>
+
+<ParamField body="latitude" type="number">
+  Geographic latitude
+</ParamField>
+
+<ParamField body="longitude" type="number">
+  Geographic longitude
+</ParamField>
+
+<ParamField body="zoom_level" type="integer">
+  Map zoom level
+</ParamField>
+
+<Info>
+For **asset accounts**, the `account_role` field is required and determines how the account behaves.
+
+For **liability accounts**, both `liability_type` and `liability_direction` are required.
+</Info>
+
+## Get Account by ID
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://demo.firefly-iii.org/api/v1/accounts/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `GET /v1/accounts/{id}`
+
+Returns the same response fields as the List endpoint.
+
+## Update Account
+
+<CodeGroup>
+```bash cURL
+curl -X PUT "https://demo.firefly-iii.org/api/v1/accounts/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated Savings Account",
+    "active": true,
+    "notes": "My primary savings account"
+  }'
+```
+</CodeGroup>
+
+**Endpoint:** `PUT /v1/accounts/{id}`
+
+Accepts the same parameters as Create Account. All fields are optional.
+
+## Delete Account
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE "https://demo.firefly-iii.org/api/v1/accounts/{id}" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+</CodeGroup>
+
+**Endpoint:** `DELETE /v1/accounts/{id}`
+
+Deletes the specified account and all associated data.
+
+<Warning>
+Deleting an account will also delete all associated transactions. This action cannot be undone.
+</Warning>
+
+## Related Endpoints
+
+### Get Account Piggy Banks
+
+**Endpoint:** `GET /v1/accounts/{id}/piggy-banks`
+
+Returns all piggy banks associated with this account.
+
+### Get Account Transactions
+
+**Endpoint:** `GET /v1/accounts/{id}/transactions`
+
+Returns all transactions for this account.
+
+### Get Account Attachments
+
+**Endpoint:** `GET /v1/accounts/{id}/attachments`
+
+Returns all attachments associated with this account.

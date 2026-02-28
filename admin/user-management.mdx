@@ -1,0 +1,320 @@
+---
+title: User Management
+description: Manage users, roles, and group memberships in Firefly III
+---
+
+Firefly III provides comprehensive multi-user support with role-based access control through user groups. Administrators can manage users, assign roles, and control access to financial data.
+
+## User Groups and Memberships
+
+Firefly III uses a user group system where users belong to groups with specific roles that define their permissions.
+
+### User Group Structure
+
+Each user belongs to a user group (identified by `user_group_id`) and has memberships that define their access level. The system is built around three main models:
+
+- **User**: The basic user account with email, password, and authentication settings
+- **UserGroup**: A container for financial data (accounts, transactions, budgets, etc.)
+- **GroupMembership**: Links users to groups with specific roles
+
+### Available User Roles
+
+Firefly III implements a granular permission system with the following roles:
+
+<Accordion title="Read-Only Access">
+  **Role**: `ro` (READ_ONLY)
+  
+  Most basic rights - users can view everything in the group but cannot make changes. Includes:
+  - View all transactions and accounts
+  - Read metadata (categories, tags, object groups)
+  - Cannot see other group members
+</Accordion>
+
+<Accordion title="Transaction Management">
+  **Role**: `mng_trx` (MANAGE_TRANSACTIONS)
+  
+  Required to actively use the group:
+  - Create, edit, and delete transactions
+  - Manage accounts
+  - Record income and expenses
+</Accordion>
+
+<Accordion title="Metadata Management">
+  **Role**: `mng_meta` (MANAGE_META)
+  
+  Edit and manage organizational structures:
+  - Categories
+  - Tags
+  - Object groups
+</Accordion>
+
+<Accordion title="Specialized Read Permissions">
+  Individual read permissions for specific features:
+  - `read_budgets` - View budgets
+  - `read_piggies` - View piggy banks
+  - `read_subscriptions` - View bills/subscriptions
+  - `read_rules` - View automation rules
+  - `read_recurring` - View recurring transactions
+  - `read_webhooks` - View webhooks
+  - `read_currencies` - View currency settings
+</Accordion>
+
+<Accordion title="Specialized Management Permissions">
+  Individual management permissions for specific features:
+  - `mng_budgets` - Manage budgets
+  - `mng_piggies` - Manage piggy banks
+  - `mng_subscriptions` - Manage bills/subscriptions
+  - `mng_rules` - Manage automation rules
+  - `mng_recurring` - Manage recurring transactions
+  - `mng_webhooks` - Manage webhooks
+  - `mng_currencies` - Manage currencies
+</Accordion>
+
+<Accordion title="Reporting and Membership">
+  **VIEW_REPORTS** (`view_reports`): Generate and view financial reports
+  
+  **VIEW_MEMBERSHIPS** (`view_memberships`): View group members and their roles (requires FULL role to manage)
+</Accordion>
+
+<Accordion title="Full Access">
+  **Role**: `full`
+  
+  Everything the creator can do, except:
+  - Cannot remove or change the original creator
+  - Cannot delete the group
+</Accordion>
+
+<Accordion title="Owner">
+  **Role**: `owner`
+  
+  Reserved for the original group creator:
+  - Complete control over the group
+  - Can delete the group
+  - Can change all settings
+</Accordion>
+
+## User Administration
+
+### Accessing User Management
+
+Only users with the global "owner" role can access user administration:
+
+<Steps>
+  <Step title="Navigate to Settings">
+    Click on your profile icon and select "Administration" → "User Administration"
+  </Step>
+  
+  <Step title="View Users">
+    The user list shows:
+    - Email address
+    - Account creation date
+    - Admin status (global owner role)
+    - 2FA status
+    - Blocked status
+  </Step>
+</Steps>
+
+### Creating and Inviting Users
+
+Firefly III supports two user creation methods:
+
+<Tabs>
+  <Tab title="Invitation System">
+    When single-user mode is enabled and registration is allowed:
+    
+    1. Enter the email address of the user to invite
+    2. System generates a unique invitation code
+    3. User receives an email with registration link
+    4. User creates account using the invitation
+    
+    <Note>
+      Invitations can be deleted before they are redeemed. Once redeemed, the invitation cannot be removed.
+    </Note>
+  </Tab>
+  
+  <Tab title="Manual Registration">
+    If user registration is enabled:
+    
+    1. Users can register at `/register`
+    2. New users trigger a notification to administrators
+    3. Admins can approve or block accounts
+  </Tab>
+</Tabs>
+
+### Editing Users
+
+Administrators can modify user accounts:
+
+```php
+// User model fillable fields
+protected $fillable = ['email', 'password', 'blocked', 'blocked_code', 'user_group_id'];
+```
+
+<Steps>
+  <Step title="Access User Editor">
+    Click "Edit" next to any user in the user administration panel
+  </Step>
+  
+  <Step title="Update User Details">
+    You can modify:
+    - Email address
+    - Password (if internal authentication)
+    - Admin status (owner role)
+    - Blocked status
+    - Block code/reason
+  </Step>
+  
+  <Step title="Block Codes">
+    When blocking a user, you can specify a reason:
+    - **No block code**: User is not blocked
+    - **bounced**: Email address bounced
+    - **expired**: Account has expired
+    - **email_changed**: User changed their email
+  </Step>
+</Steps>
+
+<Warning>
+  You cannot remove your own admin privileges. This prevents accidental lockout from the system.
+</Warning>
+
+### Deleting Users
+
+To permanently remove a user account:
+
+<Steps>
+  <Step title="Navigate to User">
+    Go to User Administration and click "Delete" next to the user
+  </Step>
+  
+  <Step title="Confirm Deletion">
+    Review the warning and confirm deletion
+    
+    <Warning>
+      User deletion is permanent and cannot be undone. All data associated with the user's personal group will be deleted.
+    </Warning>
+  </Step>
+</Steps>
+
+## Group Membership Management
+
+### Checking User Roles
+
+The system provides methods to verify user permissions:
+
+```php
+// Check if user has a specific role in a group
+$user->hasSpecificRoleInGroup($userGroup, UserRoleEnum::MANAGE_TRANSACTIONS);
+
+// Check if user has role or is owner/full member
+$user->hasRoleInGroupOrOwner($userGroup, UserRoleEnum::READ_ONLY);
+
+// Check global role
+$user->hasRole('owner');
+```
+
+### Viewing Group Information
+
+Users can see their group memberships and roles:
+
+```php
+// Get all group memberships for a user
+$user->groupMemberships()->with(['userGroup', 'userRole'])->get();
+
+// Get user's current administration ID
+$groupId = $user->getAdministrationId();
+```
+
+## Single User Mode
+
+Firefly III can operate in single-user mode where:
+
+- User registration is restricted
+- Invitations are the only way to add users
+- Each user typically has their own isolated group
+
+Configure in `.env`:
+
+```bash
+# Check configuration
+php artisan tinker
+>>> FireflyIII\Support\Facades\FireflyConfig::get('single_user_mode')->data;
+```
+
+## External Authentication
+
+When using external authentication (Authelia, LDAP, etc.), user management features are limited:
+
+- Cannot change passwords
+- Cannot edit email addresses
+- User creation handled externally
+- Role assignment still available
+
+Set in `.env`:
+
+```bash
+AUTHENTICATION_GUARD=remote_user_guard
+AUTHENTICATION_GUARD_HEADER=REMOTE_USER
+```
+
+## Best Practices
+
+<Tip>
+  **Role Assignment Strategy**
+  
+  1. Start with READ_ONLY for new users
+  2. Grant MANAGE_TRANSACTIONS for active users
+  3. Add specific permissions as needed
+  4. Reserve FULL and OWNER for trusted administrators
+</Tip>
+
+<Tip>
+  **Security Recommendations**
+  
+  - Enable 2FA for all admin accounts (see [Security](/admin/security))
+  - Regularly audit user roles and permissions
+  - Use block codes to document why accounts are disabled
+  - Review invitation list and delete unused invitations
+</Tip>
+
+<Info>
+  **Multi-tenancy Considerations**
+  
+  Each user group maintains completely separate financial data:
+  - Accounts and transactions
+  - Budgets and categories
+  - Rules and recurring transactions
+  - Webhooks and settings
+  
+  Users can be members of multiple groups with different roles in each.
+</Info>
+
+## Troubleshooting
+
+### Users Cannot Login
+
+1. Check if user account is blocked
+2. Verify authentication guard configuration
+3. Check email address is correct
+4. Review authentication logs
+
+### Missing Group Membership
+
+If a user has no group membership, run:
+
+```bash
+php artisan correction:create-group-memberships
+```
+
+### Role Permission Issues
+
+Correct group information and memberships:
+
+```bash
+php artisan correction:group-information
+```
+
+## Related Topics
+
+- [Security Settings](/admin/security) - Configure 2FA and authentication
+- [Backup & Restore](/admin/backup-restore) - Protect user data
+- [Troubleshooting](/admin/troubleshooting) - Common issues and solutions
